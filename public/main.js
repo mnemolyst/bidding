@@ -4,7 +4,7 @@
             if (event.which == 13) {
                 var vig = parseFloat($(this).closest('.vig').val());
                 var data = {
-                    vig: (vig && vig <= 1) ? vig : 0.15,
+                    vig: (vig !== Math.NaN && vig >= 0 && vig <= 1) ? vig : 0.15,
                     contestants: [],
                 };
                 $(this).closest('.contest').find('.contestant').each(function(i, e) {
