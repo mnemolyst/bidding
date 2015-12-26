@@ -67,5 +67,22 @@
                 },
             });
         });
+
+        $('div.contests').sortable({
+            items: '.contest:not(.new)',
+            axis: 'y',
+            update: function(event, ui) {
+                var data = {};
+                $('div.contests .contest').each(function(i, e) {
+                    data[$(e).data('contest-id')] = $(e).data('priority');
+                });
+                $.ajax({
+                    url: '/contests/reorder',
+                    data: data,
+                    contentType: 'application/json',
+                    method: 'POST',
+                });
+            },
+        });
     });
 })(jQuery)

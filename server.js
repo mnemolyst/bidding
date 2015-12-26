@@ -24,7 +24,7 @@ var params = [];
 var queryAll = function(db, what) {
     var promise = new Promise();
 
-    db.collection(what).find().sort({_id: 1}).toArray(function(err, docs) {
+    db.collection(what).find().sort({priority: 1}).toArray(function(err, docs) {
         params[what] = docs;
         promise.callback();
     });
@@ -150,5 +150,11 @@ app.post('/contest/:id/delete', function(req, res, next) {
         );
     });
 });
+
+//app.post('/contest/:id/delete', function(req, res, next) {
+//    mongo.connect(mongoUrl, function(err, db) {
+//        // TODO promise set of updates for priorities
+//    });
+//});
 
 app.listen(8080);

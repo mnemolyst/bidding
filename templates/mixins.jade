@@ -3,7 +3,7 @@ mixin contest(contest)
         .contest.new
             a(href="javascript:void(null)") New
     else
-        .contest(data-contest-id=contest._id.toString())
+        .contest(data-contest-id=contest._id.toString(), data-priority=contest.priority)
             b Vig:&nbsp;
             input.vig(value=contest.vig)
             .controls
