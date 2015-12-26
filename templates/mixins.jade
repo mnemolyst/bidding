@@ -1,0 +1,48 @@
+mixin contest(contest)
+    if contest === null
+        .contest.new
+            a(href="javascript:void(null)") New
+    else
+        .contest(data-contest-id=contest._id.toString())
+            b Vig:&nbsp;
+            input.vig(value=contest.vig)
+            .controls
+                a.delete(href="javascript:void(null)") X
+            table
+                tr
+                    th Contestant
+                    th Bids
+                    if contest.outcome === null
+                        th Odds
+                    else
+                        th Winner
+                each contestant in contest.contestants
+                    +contestant(contestant)
+                tr.contestant.new
+                    td: input.name(placeholder="New contestant")
+
+mixin contestant(contestant)
+    -
+        var a = Math.round((contestant.odds - 1) * 10) / 10;
+        var b = Math.round(contestant.odds * 10) / 10;
+        if (a >= 0.1) {
+            var odds = a + ' to 1 (' + b + ')';
+        } else {
+            var odds = b;
+        }
+    tr.contestant
+        td: input.name(value=contestant.name, disabled)
+        td: +bids(contestant.bids)
+        td= odds
+
+mixin bids(bids)
+    .bids
+        table
+            each bid in bids
+                tr.bid
+                    td: input.bidder(value=bid.bidder, disabled)
+                    td: input.amount(placeholder="Amount", value=bid.amount)
+            tr.bid.new
+                td: input.bidder(placeholder="Bidder")
+                td: input.amount(placeholder="Amount")
+

@@ -1,0 +1,15 @@
+include mixins.jade
+
+html
+    head
+        title Thumb Durr Dome
+        link(rel='stylesheet', type='text/css', href='main.css')
+        script(src='https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js')
+        //script(src='jquery.min.js')
+        script(src='main.js')
+    body
+        h1 Thumb Durr Dome
+        .contests
+            each contest in contests
+                +contest(contest)
+            +contest(null)

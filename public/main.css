@@ -1,0 +1,13 @@
+.contest {
+    border:1px solid;
+    margin:5px 50px 0px;
+    padding:5px;
+}
+.contest td {
+}
+.contest input {
+    width:120px;
+}
+.controls {
+    float:right;
+}
