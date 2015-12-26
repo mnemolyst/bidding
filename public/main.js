@@ -72,13 +72,16 @@
             items: '.contest:not(.new)',
             axis: 'y',
             update: function(event, ui) {
-                var data = {};
-                $('div.contests .contest').each(function(i, e) {
-                    data[$(e).data('contest-id')] = $(e).data('priority');
+                var data = [];
+                $('div.contests .contest[data-contest-id]').each(function(i, e) {
+                    data.push({
+                        id: $(e).data('contest-id'),
+                        priority: i,
+                    });
                 });
                 $.ajax({
                     url: '/contests/reorder',
-                    data: data,
+                    data: JSON.stringify(data),
                     contentType: 'application/json',
                     method: 'POST',
                 });

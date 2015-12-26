@@ -92,7 +92,7 @@ app.get('/contest/new', function(req, res, next) {
                     if (r.result.ok === 1 && r.ops.length == 1) {
                         res.render('contest', {contest: r.ops[0]})
                     } else {
-                        res.status(500).send('no good');
+                        res.sendStatus(500);
                     }
 
                     res.end();
@@ -120,7 +120,7 @@ app.post('/contest/:id/contestants', function(req, res, next) {
                     var contest = computeOdds(r.value);
                     res.render('contest', {contest: contest});
                 } else {
-                    res.status(500).send('no good');
+                    res.sendStatus(500);
                 }
 
                 res.end();
@@ -139,9 +139,9 @@ app.post('/contest/:id/delete', function(req, res, next) {
                 if (err) throw err;
 
                 if (r.ok === 1) {
-                    res.send('OK');
+                    res.sendStatus(200);
                 } else {
-                    res.status(500).send('no good');
+                    res.sendStatus(500);
                 }
 
                 res.end();
@@ -151,10 +151,36 @@ app.post('/contest/:id/delete', function(req, res, next) {
     });
 });
 
-//app.post('/contest/:id/delete', function(req, res, next) {
-//    mongo.connect(mongoUrl, function(err, db) {
-//        // TODO promise set of updates for priorities
-//    });
-//});
+app.post('/contests/reorder', function(req, res, next) {
+    mongo.connect(mongoUrl, function(err, db) {
+        var queries = [];
+        for (var i = 0; i < req.body.length; i++) {
+            queries.push((function(rbi) {
+                var promise = new Promise();
+                db.collection('contests').findOneAndUpdate(
+                    {_id: new ObjectId(rbi.id)},
+                    {$set: {priority: rbi.priority}},
+                    {},
+                    function(err, r) {
+                        if (err) throw err;
+                        if (r.ok === 1) {
+                            promise.callback();
+                        } else {
+                            promise.reject();
+                        }
+                    }
+                );
+                return promise.promise();
+            })(req.body[i]));
+        }
+
+        p.when(queries).then(function() {
+            res.sendStatus(200);
+            db.close();
+        }, function(err) {
+            res.sendStatus(500);
+        });
+    });
+});
 
 app.listen(8080);
