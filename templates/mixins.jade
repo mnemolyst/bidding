@@ -1,48 +1,57 @@
 mixin contest(contest)
     if contest === null
         .contest.new
-            a(href="javascript:void(null)") New
+            a(href = "javascript:void(null)") New
     else
-        .contest(data-contest-id=contest._id.toString(), data-priority=contest.priority)
-            b Vig:&nbsp;
-            input.vig(value=contest.vig)
+        .contest(data-contest-id = contest._id.toString(), data-priority = contest.priority)
             .controls
-                a.delete(href="javascript:void(null)") Delete
+                a.delete(href = "javascript:void(null)") Delete
+            table
+                tr
+                    th Vig
+                    th House take
+                tr
+                    td: input.vig(value = contest.vig)
+                    td: input(value = Math.round(contest.totalBid * contest.vig * 10) / 10, disabled)
             table
                 tr
                     th Contestant
                     th Bids
                     if contest.outcome === null
-                        th Odds
+                        th Payout rate
                     else
                         th Winner
                 each contestant in contest.contestants
                     +contestant(contestant)
                 tr.contestant.new
-                    td: input.name(placeholder="New contestant")
+                    td: input.name(placeholder = "New contestant")
+
+mixin match(match)
+    .match(data-match-id = match._id.toString(), data-bracket = match.bracket)
+        .contestant(class = match.a ? '' : 'null')
+            if match.a
+                = match.a
+            else
+                input.name.a
+        .contestant(class = match.b ? '' : 'null')
+            if match.b
+                = match.b
+            else
+                input.name.b
 
 mixin contestant(contestant)
-    -
-        var a = Math.round((contestant.odds - 1) * 10) / 10;
-        var b = Math.round(contestant.odds * 10) / 10;
-        if (a >= 0.1) {
-            var odds = a + ' to 1 (' + b + ')';
-        } else {
-            var odds = b;
-        }
     tr.contestant
-        td: input.name(value=contestant.name, disabled)
+        td: input.name(value = contestant.name, disabled)
         td: +bids(contestant.bids)
-        td= odds
+        td= Math.round(contestant.payout * 100) / 100
 
 mixin bids(bids)
     .bids
         table
             each bid in bids
                 tr.bid
-                    td: input.bidder(value=bid.bidder, disabled)
-                    td: input.amount(placeholder="Amount", value=bid.amount)
+                    td: input.bidder(value = bid.bidder, disabled)
+                    td: input.amount(placeholder = "Amount", value = bid.amount)
             tr.bid.new
-                td: input.bidder(placeholder="Bidder")
-                td: input.amount(placeholder="Amount")
-
+                td: input.bidder(placeholder = "Bidder")
+                td: input.amount(placeholder = "Amount")

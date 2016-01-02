@@ -1,36 +1,23 @@
-var mongo =         require('mongodb').MongoClient;
+var mongo = require('mongodb').MongoClient;
 
 mongo.connect('mongodb://localhost:27017/thumbdurrdome', function(err, db) {
-    db.collection('contests').remove({}, {}, function(err, r) {
-        db.collection('contests').insertMany([
+    db.collection('matches').remove({}, {}, function(err, r) {
+        db.collection('matches').insertMany([
             {
-                priority: 0,
-                vig: 0.15,
-                contestants: [
-                    {
-                        name: 'Bob',
-                        bids: [
-                            {
-                                bidder: 'Joe',
-                                amount: 1,
-                            }, {
-                                bidder: 'Sally',
-                                amount: 2,
-                            },
-                        ],
-                    },
-                    {
-                        name: 'Cecil',
-                        bids: [
-                            {
-                                bidder: 'James',
-                                amount: 1,
-                            },
-                        ],
-                    },
-                ],
-                outcome: null,
-            }
+                a: 'Alice',
+                b: 'Bob',
+                bracket: 0,
+            },
+            {
+                a: 'Cecil',
+                b: 'Denise',
+                bracket: 0,
+            },
+            {
+                a: 'Alice',
+                b: '',
+                bracket: 1,
+            },
         ], function(err, r) {
             if (err) throw err;
             db.close();

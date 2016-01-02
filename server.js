@@ -19,13 +19,17 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 var mongoUrl = process.env.MONGO_URL || 'mongodb://localhost:27017/thumbdurrdome';
 
-var params = [];
+var queryDocs = [];
 
-var queryAll = function(db, what) {
+var queryAll = function(db, what, sort) {
     var promise = new Promise();
 
-    db.collection(what).find().sort({priority: 1}).toArray(function(err, docs) {
-        params[what] = docs;
+    var cursor = db.collection(what).find();
+    if (typeof sort !== undefined) {
+        cursor = cursor.sort(sort);
+    }
+    cursor.toArray(function(err, docs) {
+        queryDocs[what] = docs;
         promise.callback();
     });
 
@@ -46,7 +50,7 @@ var computeOdds = function(contest) {
     contest['totalBid'] = contestBid;
 
     for (var i = 0; i < contest['contestants'].length; i++) {
-        contest['contestants'][i]['odds'] = contestBid * (1 - contest['vig']) / contest['contestants'][i]['totalBid'];
+        contest['contestants'][i]['payout'] = contestBid * (1 - contest['vig']) / contest['contestants'][i]['totalBid'];
     }
 
     return contest;
@@ -55,23 +59,21 @@ var computeOdds = function(contest) {
 app.get('/', function(req, res, next) {
     mongo.connect(mongoUrl, function(err, db) {
         var queries = [
-            queryAll(db, 'contests'),
+            queryAll(db, 'matches'),
             //queryAll(db, 'contestants'),
             //queryAll(db, 'bidders')
         ];
 
         p.when(queries).then(function() {
-            var contests = [];
-            for (var i = 0; i < params['contests'].length; i++) {
-                contests.push(computeOdds(params['contests'][i]));
-            }
+            //var contests = [];
+            //for (var i = 0; i < queryDocs['matches'].length; i++) {
+            //    contests.push(computeOdds(queryDocs['contests'][i]));
+            //}
+            db.close();
             res.render('index', {
-                contests: contests,
-                //contestants: params['contestants'],
-                //bidders: params['bidders'],
+                matches: queryDocs['matches'],
             });
             res.end();
-            db.close();
         });
     });
 });
@@ -116,7 +118,6 @@ app.post('/contest/:id/contestants', function(req, res, next) {
                 if (err) throw err;
 
                 if (r.ok === 1) {
-                    // Compute odds for each contestant
                     var contest = computeOdds(r.value);
                     res.render('contest', {contest: contest});
                 } else {
@@ -179,6 +180,7 @@ app.post('/contests/reorder', function(req, res, next) {
             db.close();
         }, function(err) {
             res.sendStatus(500);
+            db.close();
         });
     });
 });

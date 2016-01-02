@@ -3,15 +3,14 @@ include mixins.jade
 html
     head
         title Thumb Durr Dome
-        link(rel='stylesheet', href='https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css')
-        link(rel='stylesheet', href='main.css')
-        script(src='https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js')
-        script(src='https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js')
-        //script(src='jquery.min.js')
-        script(src='main.js')
+        link(rel = 'stylesheet', href = 'https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css')
+        link(rel = 'stylesheet', href = 'main.css')
+        script(src = 'https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js')
+        script(src = 'https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js')
+        //script(src = 'jquery.min.js')
+        script(src = 'main.js')
     body
         h1 Thumb Durr Dome
-        .contests
-            each contest in contests
-                +contest(contest)
-            +contest(null)
+        .matches
+            each match in matches
+                +match(match)

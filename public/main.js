@@ -87,5 +87,9 @@
                 });
             },
         });
+
+        $('.matches .match').draggable({
+            snap: true,
+        });
     });
 })(jQuery)

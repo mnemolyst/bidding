@@ -1,7 +1,9 @@
 .contest {
     border:1px solid;
     margin:5px 50px 0px;
-    padding:5px;
+}
+.contest > table {
+    margin:5px;
 }
 .contest td {
 }
@@ -10,4 +12,18 @@
 }
 .controls {
     float:right;
+}
+
+.match {
+    border-left:3px solid red;
+    display:inline-block;
+    margin:5px 0px;
+    padding-left:2px;
+    width:100px;
+}
+.match.new {
+    border:none;
+}
+.match input.name {
+    width:100px;
 }
