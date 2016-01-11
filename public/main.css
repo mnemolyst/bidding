@@ -16,9 +16,11 @@
 
 .match {
     border-left:3px solid red;
+    border-right:1px dotted red;
     display:inline-block;
-    margin:5px 0px;
+    height:40px;
     padding-left:2px;
+    position:fixed;
     width:100px;
 }
 .match.new {
@@ -26,4 +28,11 @@
 }
 .match input.name {
     width:100px;
+}
+
+.bracket {
+    border:1px solid black;
+    display:inline-block;
+    min-height:40px;
+    width:106px;
 }

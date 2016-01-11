@@ -6,17 +6,23 @@ mongo.connect('mongodb://localhost:27017/thumbdurrdome', function(err, db) {
             {
                 a: 'Alice',
                 b: 'Bob',
-                bracket: 0,
+                outcome: null,
+                left: 0,
+                top: 0,
             },
             {
                 a: 'Cecil',
                 b: 'Denise',
-                bracket: 0,
+                outcome: null,
+                left: 0,
+                top: 40,
             },
             {
                 a: 'Alice',
                 b: '',
-                bracket: 1,
+                outcome: null,
+                left: 0,
+                top: 80,
             },
         ], function(err, r) {
             if (err) throw err;

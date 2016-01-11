@@ -88,8 +88,15 @@
             },
         });
 
-        $('.matches .match').draggable({
-            snap: true,
+        $('.match').draggable({
         });
+
+        $('.brackets .bracket').droppable({
+            drop: function(event, ui) {
+                ui.draggable.appendTo(this);
+            },
+        });
+
+        //$('.brackets
     });
 })(jQuery)

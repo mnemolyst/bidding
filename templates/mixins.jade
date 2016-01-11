@@ -27,7 +27,10 @@ mixin contest(contest)
                     td: input.name(placeholder = "New contestant")
 
 mixin match(match)
-    .match(data-match-id = match._id.toString(), data-bracket = match.bracket)
+    .match(data-match-id = match._id.toString(), style = {
+        left: match.left,
+        top: match.top,
+    })
         .contestant(class = match.a ? '' : 'null')
             if match.a
                 = match.a
