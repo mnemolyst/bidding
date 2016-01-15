@@ -11,3 +11,18 @@
 .controls {
     float:right;
 }
+.match .contestants {
+    min-width:100px;
+}
+.match .handle {
+    background:lightpink;
+    border:1px solid;
+    cursor:ns-resize;
+    width:15px;
+}
+.contestant {
+    cursor:pointer;
+}
+.contestant.winner {
+    border:2px dotted red;
+}

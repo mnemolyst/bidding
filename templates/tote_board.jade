@@ -1,0 +1,18 @@
+extends ./layout.jade
+
+include mixins.jade
+
+block content
+    table
+        tr
+            each subboard, type in board
+                th= type
+        tr
+            each subboard in board
+                td
+                    table
+                        each payout, outcome in subboard
+                            tr
+                                td= outcome
+                                td= payout
+

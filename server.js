@@ -21,7 +21,7 @@ var mongoUrl = process.env.MONGO_URL || 'mongodb://localhost:27017/thumbdurrdome
 
 var params = [];
 
-var queryAll = function(db, what) {
+function queryAll(db, what) {
     var promise = new Promise();
 
     db.collection(what).find().sort({priority: 1}).toArray(function(err, docs) {
@@ -32,24 +32,109 @@ var queryAll = function(db, what) {
     return promise.promise();
 }
 
-var computeOdds = function(contest) {
-    var contestBid = 0;
+function permute(arr) {
+    var p = [];
 
-    for (var i = 0; i < contest['contestants'].length; i++) {
-        var contestantBid = 0;
-        for (var j = 0; j < contest['contestants'][i]['bids'].length; j++) {
-            contestantBid += contest['contestants'][i]['bids'][j]['amount'];
+    var gen = function(n, a) {
+        if (n == 1) {
+            p.push(a.slice(0));
+        } else {
+            for (var i = 0; i < n-1; i++) {
+                gen(n-1, a);
+                if (n % 2) {
+                    var tmp = a[0];
+                    a[0] = a[n - 1];
+                    a[n - 1] = tmp;
+                } else {
+                    var tmp = a[i];
+                    a[i] = a[n - 1];
+                    a[n - 1] = tmp;
+                }
+            }
+            gen(n-1, a);
         }
-        contest['contestants'][i]['totalBid'] = contestantBid;
-        contestBid += contestantBid;
-    }
-    contest['totalBid'] = contestBid;
-
-    for (var i = 0; i < contest['contestants'].length; i++) {
-        contest['contestants'][i]['odds'] = contestBid * (1 - contest['vig']) / contest['contestants'][i]['totalBid'];
     }
 
-    return contest;
+    gen(arr.length, arr);
+    return p;
+}
+
+function nChooseM(list, m) {
+    var p = {};
+
+    function gen(a, n) {
+        if (n == 1) {
+            var f = a.slice(0, m);
+            if (! p.hasOwnProperty(f.join())) {
+                p[f.join()] = f;
+            }
+        } else {
+            for (var i = 0; i < n-1; i++) {
+                gen(a, n-1);
+                if (n % 2) {
+                    var tmp = a[0];
+                    a[0] = a[n - 1];
+                    a[n - 1] = tmp;
+                } else {
+                    var tmp = a[i];
+                    a[i] = a[n - 1];
+                    a[n - 1] = tmp;
+                }
+            }
+            gen(a, n-1);
+        }
+    }
+
+    gen(list, list.length);
+
+    var ret = [];
+    for (var i in p) {
+        ret.push(p[i]);
+    }
+    return ret;
+}
+
+function toteBoard(contest) {
+    var board = {};
+    for (var type in contest['bids']) {
+        if (! contest['bids'].hasOwnProperty(type)) {
+            continue;
+        }
+
+        board[type] = {};
+        var typeTotal = 0;
+        var outcomeTotals = {};
+
+        for (var i = 0; i < contest['bids'][type].length; i++) {
+            var bid = contest['bids'][type][i];
+            typeTotal += bid['amount'];
+            if (! outcomeTotals.hasOwnProperty(bid['on'])) {
+                outcomeTotals[bid['on']] = 0;
+            }
+            outcomeTotals[bid['on']] += bid['amount'];
+        }
+
+        var afterVig = typeTotal * (1 - contest['vig']);
+
+        switch (type) {
+            case 'win': //fallthrough
+            case 'place':
+            case 'show':
+                var opts = contest['contestants'];
+            break;
+            case 'exacta':
+                var opts = nChooseM(contest['contestants'], 2);
+            break;
+            case 'trifecta':
+                var opts = nChooseM(contest['contestants'], 3);
+            break;
+        }
+        for (var o in opts) {
+            board[type][opts[o]] = afterVig / outcomeTotals[opts[o]];
+        }
+    }
+
+    return board;
 }
 
 app.get('/', function(req, res, next) {
@@ -61,12 +146,12 @@ app.get('/', function(req, res, next) {
         ];
 
         p.when(queries).then(function() {
-            var contests = [];
-            for (var i = 0; i < params['contests'].length; i++) {
-                contests.push(computeOdds(params['contests'][i]));
-            }
+            //var contests = [];
+            //for (var i = 0; i < params['contests'].length; i++) {
+            //    contests.push(toteBoard(params['contests'][i]));
+            //}
             res.render('index', {
-                contests: contests,
+                contests: params['contests'],
                 //contestants: params['contestants'],
                 //bidders: params['bidders'],
             });
@@ -117,8 +202,8 @@ app.post('/contest/:id/contestants', function(req, res, next) {
 
                 if (r.ok === 1) {
                     // Compute odds for each contestant
-                    var contest = computeOdds(r.value);
-                    res.render('contest', {contest: contest});
+                    //var contest = toteBoard(r.value);
+                    res.render('contest', {contest: r.value});
                 } else {
                     res.sendStatus(500);
                 }
@@ -179,6 +264,20 @@ app.post('/contests/reorder', function(req, res, next) {
             db.close();
         }, function(err) {
             res.sendStatus(500);
+        });
+    });
+});
+
+app.get('/contest/:id/tote', function(req, res, next) {
+    mongo.connect(mongoUrl, function(err, db) {
+        db.collection('contests').find({_id: new ObjectId(req.params.id)}).limit(1).next(function(err, doc) {
+            if (err) throw err;
+
+            var board = toteBoard(doc);
+            res.render('tote_board', {board: board});
+
+            res.end();
+            db.close();
         });
     });
 });
