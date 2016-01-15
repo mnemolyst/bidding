@@ -1,9 +1,7 @@
 .contest {
     border:1px solid;
     margin:5px 50px 0px;
-}
-.contest > table {
-    margin:5px;
+    padding:5px;
 }
 .contest td {
 }
@@ -13,26 +11,18 @@
 .controls {
     float:right;
 }
-
-.match {
-    border-left:3px solid red;
-    border-right:1px dotted red;
-    display:inline-block;
-    height:40px;
-    padding-left:2px;
-    position:fixed;
-    width:100px;
+.match .contestants {
+    min-width:100px;
 }
-.match.new {
-    border:none;
+.match .handle {
+    background:lightpink;
+    border:1px solid;
+    cursor:ns-resize;
+    width:15px;
 }
-.match input.name {
-    width:100px;
+.contestant {
+    cursor:pointer;
 }
-
-.bracket {
-    border:1px solid black;
-    display:inline-block;
-    min-height:40px;
-    width:106px;
+.contestant.winner {
+    border:2px dotted red;
 }
