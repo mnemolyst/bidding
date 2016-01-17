@@ -121,13 +121,13 @@ function toteBoard(contest) {
             case 'place':
             case 'show':
                 var opts = contest['contestants'];
-            break;
+                break;
             case 'exacta':
-                var opts = nChooseM(contest['contestants'], 2);
-            break;
+                var opts = nChooseM(contest['contestants'], 2).map(function(a) { return a.join(', ') });
+                break;
             case 'trifecta':
-                var opts = nChooseM(contest['contestants'], 3);
-            break;
+                var opts = nChooseM(contest['contestants'], 3).map(function(a) { return a.join(', ') });
+                break;
         }
         for (var o in opts) {
             board[type][opts[o]] = afterVig / outcomeTotals[opts[o]];
@@ -146,16 +146,9 @@ app.get('/', function(req, res, next) {
         ];
 
         p.when(queries).then(function() {
-            //var contests = [];
-            //for (var i = 0; i < params['contests'].length; i++) {
-            //    contests.push(toteBoard(params['contests'][i]));
-            //}
             res.render('index', {
                 contests: params['contests'],
-                //contestants: params['contestants'],
-                //bidders: params['bidders'],
             });
-            res.end();
             db.close();
         });
     });
@@ -180,7 +173,6 @@ app.get('/contest/new', function(req, res, next) {
                         res.sendStatus(500);
                     }
 
-                    res.end();
                     db.close();
                 }
             );
@@ -208,7 +200,6 @@ app.post('/contest/:id/contestants', function(req, res, next) {
                     res.sendStatus(500);
                 }
 
-                res.end();
                 db.close();
             }
         );
@@ -229,7 +220,6 @@ app.post('/contest/:id/delete', function(req, res, next) {
                     res.sendStatus(500);
                 }
 
-                res.end();
                 db.close();
             }
         );
@@ -273,10 +263,10 @@ app.get('/contest/:id/tote', function(req, res, next) {
         db.collection('contests').find({_id: new ObjectId(req.params.id)}).limit(1).next(function(err, doc) {
             if (err) throw err;
 
-            var board = toteBoard(doc);
-            res.render('tote_board', {board: board});
+            res.render('tote_board', {
+                board: toteBoard(doc),
+            });
 
-            res.end();
             db.close();
         });
     });

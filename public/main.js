@@ -28,51 +28,66 @@
     }
 
     $(document).ready(function() {
-        $('div.contests').on('keydown', 'input', function(event) {
+        $('div.contests').on('keydown', '.new-contestant', function(event) {
             if (event.which == 13) {
-                var vig = parseFloat($(this).closest('.vig').val());
-                var data = {
-                    vig: (vig !== Math.NaN && vig >= 0 && vig <= 1) ? vig : 0.15,
-                    contestants: [],
-                };
-                $(this).closest('.contest').find('.contestant').each(function(i, e) {
-                    var name = $(e).find('.name').val().trim();
-                    var bids = [];
-                    $(e).find('.bids .bid').each(function(j, f) {
-                        var bidder = $(f).find('.bidder').val().trim();
-                        var amount = parseFloat($(f).find('.amount').val());
-                        if (bidder && amount) {
-                            bids.push({
-                                bidder: bidder,
-                                amount: amount,
-                            })
-                        }
-                    });
-                    if (name) {
-                        data['contestants'].push({
-                            name: name,
-                            bids: bids,
-                        });
-                    }
-                });
+                $newContestant = $('<div class="contestant">').html($(this).val());
 
-                var contestId = $(this).closest('[data-contest-id]').data('contest-id');
-                var inputIdx = $('input').index(this);
-                $.ajax({
-                    url: '/contest/' + contestId + '/contestants',
-                    data: JSON.stringify(data),
-                    contentType: 'application/json',
-                    method: 'POST',
-                    context: this,
-                    success: function(data) {
-                        $(this).closest('.contest').replaceWith(data);
-                        $('input:eq(' + (inputIdx + 1) + ')').focus();
-                    },
-                });
-            } else {
-                //alert(event.which);
+                $target = $('table.bracket').first().find('td.contestants:has(.contestant:only-child)');
+                if (! $target.length) {
+                    $target = $('<tr class="match">')
+                    $target.append('<td class="contestants">', '<td class="handle">');
+                    $('table.bracket').first().append($target);
+                }
+                $target.find('.contestants').append($newContestant);
+                $('.brackets').sortable('refresh');
             }
         });
+
+        //$('div.contests').on('keydown', 'input', function(event) {
+        //    if (event.which == 13) {
+        //        var vig = parseFloat($(this).closest('.vig').val());
+        //        var data = {
+        //            vig: (vig !== Math.NaN && vig >= 0 && vig <= 1) ? vig : 0.15,
+        //            contestants: [],
+        //        };
+        //        $(this).closest('.contest').find('.contestant').each(function(i, e) {
+        //            var name = $(e).find('.name').val().trim();
+        //            var bids = [];
+        //            $(e).find('.bids .bid').each(function(j, f) {
+        //                var bidder = $(f).find('.bidder').val().trim();
+        //                var amount = parseFloat($(f).find('.amount').val());
+        //                if (bidder && amount) {
+        //                    bids.push({
+        //                        bidder: bidder,
+        //                        amount: amount,
+        //                    })
+        //                }
+        //            });
+        //            if (name) {
+        //                data['contestants'].push({
+        //                    name: name,
+        //                    bids: bids,
+        //                });
+        //            }
+        //        });
+
+        //        var contestId = $(this).closest('[data-contest-id]').data('contest-id');
+        //        var inputIdx = $('input').index(this);
+        //        $.ajax({
+        //            url: '/contest/' + contestId + '/contestants',
+        //            data: JSON.stringify(data),
+        //            contentType: 'application/json',
+        //            method: 'POST',
+        //            context: this,
+        //            success: function(data) {
+        //                $(this).closest('.contest').replaceWith(data);
+        //                $('input:eq(' + (inputIdx + 1) + ')').focus();
+        //            },
+        //        });
+        //    } else {
+        //        //alert(event.which);
+        //    }
+        //});
 
         $('div.contests').on('click', '.contest.new a', function() {
             $.ajax({
@@ -127,11 +142,11 @@
             axis: 'y',
             handle: '.handle',
             items: '.match',
+            update: sync,
         });
 
-        $('.contestants').sortable({
+        $('.brackets').sortable({
             items: '.contestant',
-            connectWith: '.contestants',
             update: sync,
         });
     });

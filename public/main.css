@@ -11,7 +11,12 @@
 .controls {
     float:right;
 }
+table.brackets {
+    empty-cells:show;
+}
 .match .contestants {
+    border:1px solid;
+    min-height:20px;
     min-width:100px;
 }
 .match .handle {
@@ -25,4 +30,18 @@
 }
 .contestant.winner {
     border:2px dotted red;
+}
+table.bids td {
+    border-right:1px solid;
+    min-width:100px;
+    padding:5px;
+    vertical-align:top;
+}
+table.bids td:last-child {
+    border-right:none;
+}
+a {
+    color:orangered;
+    font-weight:bold;
+    text-decoration:none;
 }

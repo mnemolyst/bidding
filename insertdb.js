@@ -68,7 +68,7 @@ mongo.connect('mongodb://localhost:27017/thumbdurrdome', function(err, db) {
                         {
                             bidder: 'Oliver',
                             amount: 15,
-                            on: 'Bob,Alice',
+                            on: 'Bob, Alice',
                         },
                     ],
                     trifecta: [
@@ -82,6 +82,11 @@ mongo.connect('mongodb://localhost:27017/thumbdurrdome', function(err, db) {
                     'Alice',
                     'Bob',
                     'Cecil',
+                    'Desmond',
+                    'Elliot',
+                    'Frankie',
+                    'Geoff',
+                    'Hattie',
                 ],
                 brackets: [
                     [
@@ -129,12 +134,12 @@ mongo.connect('mongodb://localhost:27017/thumbdurrdome', function(err, db) {
                         {
                             bidder: 'Oliver',
                             amount: 15,
-                            on: 'Alice,Cecil',
+                            on: 'Alice, Cecil',
                         },
                         {
                             bidder: 'Peter',
                             amount: 15,
-                            on: 'Alice,Bob',
+                            on: 'Alice, Bob',
                         },
                     ],
                     trifecta: [
