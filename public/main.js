@@ -29,17 +29,22 @@
 
     $(document).ready(function() {
         $('div.contests').on('keydown', '.new-contestant', function(event) {
-            if (event.which == 13) {
-                $newContestant = $('<div class="contestant">').html($(this).val());
+            if (event.which == 13 && $(this).val().trim()) {
+                $newContestant = $('<div class="name">').html($(this).val());
 
-                $target = $('table.bracket').first().find('td.contestants:has(.contestant:only-child)');
+                $bracket = $(this).closest('.contest').find('table.bracket').first();
+                $target = $bracket.find('.match:not(.prototype) .contestant:not(:has(.name))').first();
                 if (! $target.length) {
-                    $target = $('<tr class="match">')
-                    $target.append('<td class="contestants">', '<td class="handle">');
-                    $('table.bracket').first().append($target);
+                    $prototype = $bracket.find('.match.prototype');
+                    $clone = $prototype.clone().removeClass('prototype');
+                    $clone.insertBefore($prototype);
+                    $target = $clone.find('.contestant:not(:has(.name))').first();
                 }
-                $target.find('.contestants').append($newContestant);
-                $('.brackets').sortable('refresh');
+                $target.append($newContestant);
+                $(this).val('');
+                $('.contestant .name').draggable({
+                    revert: 'invalid',
+                });
             }
         });
 
@@ -121,6 +126,7 @@
         $('div.contests').sortable({
             items: '.contest:not(.new)',
             axis: 'y',
+            handle: '.move',
             update: function(event, ui) {
                 var data = [];
                 $('div.contests .contest[data-contest-id]').each(function(i, e) {
@@ -145,9 +151,43 @@
             update: sync,
         });
 
-        $('.brackets').sortable({
-            items: '.contestant',
-            update: sync,
+        $('.contestant .name').draggable({
+            revert: 'invalid',
+        });
+
+        $('.contestant').droppable({
+            activate: function(event, ui) {
+                if (! $(this).is(':has(.name)')) {
+                    $(this).addClass('active-droppable');
+                }
+            },
+            deactivate: function(event, ui) {
+                $(this).removeClass('active-droppable');
+            },
+            drop: function(event, ui) {
+                if ($(this).is(':has(.name)')) {
+                    ui.draggable.css({left:0,top:0});
+                } else if (ui.draggable.closest('.bracket').is($(this).closest('.bracket'))) {
+                    ui.draggable.css({left:0,top:0}).appendTo(this);
+                } else {
+                    ui.draggable.css({left:0,top:0}).clone().appendTo(this);
+                    $('.contestant .name').draggable({
+                        revert: 'invalid',
+                    });
+                }
+            },
+        });
+
+        $('img.delete').droppable({
+            activate: function(event, ui) {
+                $(this).attr('src', '/delete-box-active.png');
+            },
+            deactivate: function(event, ui) {
+                $(this).attr('src', '/delete-box.png');
+            },
+            drop: function(event, ui) {
+                ui.draggable.remove();
+            },
         });
     });
 })(jQuery)

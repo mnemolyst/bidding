@@ -31,8 +31,8 @@ mongo.connect('mongodb://localhost:27017/thumbdurrdome', function(err, db) {
                             winner: 'Elliot',
                         },
                         {
-                            contestants: ['Geoff', 'Hattie'],
-                            winner: 'Hattie',
+                            contestants: ['Geoff'],
+                            winner: '',
                         },
                     ],
                     [
@@ -47,7 +47,7 @@ mongo.connect('mongodb://localhost:27017/thumbdurrdome', function(err, db) {
                     ],
                     [
                         {
-                            contestants: ['Desmond', 'Hattie'],
+                            contestants: ['Desmond'],
                             winner: '',
                         },
                     ],

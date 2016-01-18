@@ -4,13 +4,22 @@ mixin contest(contest)
             a(href="javascript:void(null)") new
     else
         .contest(data-contest-id=contest._id.toString(), data-priority=contest.priority)
-            b Vig:&nbsp;
-            input.vig(value=contest.vig)
-            input.new-contestant(placeholder="New contestant")
             .controls
+                a.tote(href="/contest/#{contest._id.toString()}/tote") Tote Board
+                br
                 a.delete(href="javascript:void(null)") Delete
                 br
-                a.tote(href="/contest/#{contest._id.toString()}/tote") Tote Board
+                a.move(href="javascript:void(null)") Move
+            b Vig:&nbsp;
+            input.vig(value=contest.vig)
+            br
+            br
+            b New contestant:&nbsp;
+            input.new-contestant(placeholder="Name")
+            br
+            br
+            b Delete contestant:&nbsp;
+            img(class="delete" src="/delete-box.png")
             table.brackets
                 tr
                     each bracket in contest.brackets
@@ -27,11 +36,20 @@ mixin contest(contest)
 mixin bracket(bracket)
     table.bracket
         each match in bracket
-            tr.match
-                td.contestants
-                    each contestant in match.contestants
-                        .contestant(class=(contestant == match.winner ? 'winner' : ''))= contestant
-                td.handle
+            +match(match)
+        +match()
+
+mixin match(match)
+    tr.match(class=(match ? '' : 'prototype'))
+        td.contestants
+            .contestant
+                if match && match.contestants.length > 0
+                    .name(class=(match.contestants[0] == match.winner ? 'winner' : ''))= match.contestants[0]
+            img(src="/vs.png")
+            .contestant
+                if match && match.contestants.length > 1
+                    .name(class=(match.contestants[1] == match.winner ? 'winner' : ''))= match.contestants[1]
+        td.handle
 
 mixin bidType(bidType)
     td

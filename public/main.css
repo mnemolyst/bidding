@@ -11,13 +11,14 @@
 .controls {
     float:right;
 }
+.controls a.move {
+    cursor:ns-resize;
+}
 table.brackets {
     empty-cells:show;
 }
 .match .contestants {
     border:1px solid;
-    min-height:20px;
-    min-width:100px;
 }
 .match .handle {
     background:lightpink;
@@ -25,10 +26,18 @@ table.brackets {
     cursor:ns-resize;
     width:15px;
 }
+.match.prototype {
+    display:none;
+}
 .contestant {
+    border:1px solid white;
+    min-height:10px;
+    min-width:100px;
+}
+.contestant .name {
     cursor:pointer;
 }
-.contestant.winner {
+.contestant .name.winner {
     border:2px dotted red;
 }
 table.bids td {
@@ -44,4 +53,8 @@ a {
     color:orangered;
     font-weight:bold;
     text-decoration:none;
+}
+.active-droppable {
+    background:#effbee;
+    border:1px solid #aefca1;
 }
