@@ -160,10 +160,11 @@ app.get('/contest/new', function(req, res, next) {
             if (err) throw err;
             db.collection('contests').insertOne(
                 {
-                    priority: count,
+                    priority: 0,
                     vig: 0.15,
-                    contestants: [],
-                    outcome: null,
+                    contestants: [ ],
+                    brackets: [ [ ], [ ], [ ], ],
+                    bids: { win: [ ], place: [ ], show: [ ], exacta: [ ], trifecta: [ ], },
                 }, {}, function(err, r) {
                     if (err) throw err;
 

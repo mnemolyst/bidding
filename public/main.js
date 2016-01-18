@@ -153,6 +153,7 @@
 
         $('.contestant .name').draggable({
             revert: 'invalid',
+            scope: 'contestants',
         });
 
         $('.contestant').droppable({
@@ -176,6 +177,7 @@
                     });
                 }
             },
+            scope: 'contestants',
         });
 
         $('img.delete').droppable({
@@ -188,6 +190,7 @@
             drop: function(event, ui) {
                 ui.draggable.remove();
             },
+            scope: 'contestants',
         });
     });
 })(jQuery)

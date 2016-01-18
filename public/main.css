@@ -17,6 +17,9 @@
 table.brackets {
     empty-cells:show;
 }
+.match {
+    background:white;
+}
 .match .contestants {
     border:1px solid;
 }
