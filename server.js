@@ -154,6 +154,12 @@ app.get('/', function(req, res, next) {
     });
 });
 
+app.get('/debbug', function(req, res, next) {
+    for (var i in process.env) {
+        res.write(i + ': ' + process.env[i] + '\n');
+    }
+});
+
 app.get('/contest/new', function(req, res, next) {
     mongo.connect(mongoUrl, function(err, db) {
         db.collection('contests').count({}, {}, function(err, count) {
@@ -163,7 +169,7 @@ app.get('/contest/new', function(req, res, next) {
                     priority: 0,
                     vig: 0.15,
                     contestants: [ ],
-                    brackets: [ [ ], [ ], [ ], ],
+                    brackets: [ ],
                     bids: { win: [ ], place: [ ], show: [ ], exacta: [ ], trifecta: [ ], },
                 }, {}, function(err, r) {
                     if (err) throw err;
@@ -178,6 +184,32 @@ app.get('/contest/new', function(req, res, next) {
                 }
             );
         });
+    });
+});
+
+app.put('/contest/:id', function(req, res, next) {
+    mongo.connect(mongoUrl, function(err, db) {
+        db.collection('contests').replaceOne(
+            {_id: new ObjectId(req.params.id)},
+            req.body,
+            {},
+            function(err, r) {
+                if (err) throw err;
+
+                if (r.result.ok === 1) {
+                    db.collection('contests').find({_id: new ObjectId(req.params.id)}).limit(1).next(function(err, doc) {
+                        if (err) throw err;
+
+                        res.render('contest', {contest: doc});
+
+                        db.close();
+                    });
+                } else {
+                    res.sendStatus(500);
+                    db.close();
+                }
+            }
+        );
     });
 });
 

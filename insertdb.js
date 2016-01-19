@@ -1,6 +1,7 @@
 var mongo =         require('mongodb').MongoClient;
+var mongoUrl = process.env.MONGO_URL || 'mongodb://localhost:27017/thumbdurrdome';
 
-mongo.connect('mongodb://localhost:27017/thumbdurrdome', function(err, db) {
+mongo.connect(mongoUrl, function(err, db) {
     db.collection('contests').remove({}, {}, function(err, r) {
         db.collection('contests').insertMany([
             {

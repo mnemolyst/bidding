@@ -13,18 +13,94 @@
                 trifecta: [],
             },
         };
-        $contest.find('.bracket').each(function(i, e) {
+        $contest.find('.bracket:not(.prototype)').each(function(i, e) {
             var bracket = [];
-            $(e).find('.match').each(function(j, f) {
+            $(e).find('.match:not(.prototype)').each(function(j, f) {
                 var match = {
-                    contestants: $(f).find('.contestant').map(function(k,g){return $(g).text()}).get().slice(0, 2),
+                    contestants: $(f).find('.name').map(function(k,g){return $(g).text()}).get().slice(0, 2),
                     winner: $(f).find('.contestant.winner').first().text(),
                 };
                 bracket.push(match);
             });
             data['brackets'].push(bracket)
         });
-        console.log(data);
+        $contest.find('.bid-type').each(function(i, e) {
+            $(e).find('.bid').each(function(j, f) {
+                data['bids'][$(e).data('type')].push({
+                    bidder: $(f).find('.bidder').data('val'),
+                    amount: $(f).find('.amount').data('val'),
+                    on: $(f).find('.on').data('val'),
+                });
+            });
+        });
+
+        $.ajax({
+            url: '/contest/' + $contest.data('contest-id'),
+            data: JSON.stringify(data),
+            contentType: 'application/json',
+            method: 'PUT',
+            context: this,
+            success: function(data) {
+                $(this).closest('.contest').replaceWith(data);
+                setupDragging();
+            },
+        });
+    }
+
+    function setupDragging() {
+        $('.bracket tbody').sortable({
+            axis: 'y',
+            handle: '.handle',
+            items: '.match',
+            update: sync,
+        });
+
+        $('.contestant .name').draggable({
+            revert: 'invalid',
+            scope: 'contestants',
+        });
+
+        $('.contestant').droppable({
+            activate: function(event, ui) {
+                if (! $(this).is(':has(.name)')) {
+                    $(this).addClass('active-droppable');
+                }
+            },
+            deactivate: function(event, ui) {
+                $(this).removeClass('active-droppable');
+            },
+            drop: function(event, ui) {
+                if ($(this).is(':has(.name)')) {
+                    ui.draggable.css({left:0,top:0});
+                } else if (ui.draggable.closest('.bracket').is($(this).closest('.bracket'))) {
+                    ui.draggable.css({left:0,top:0}).appendTo(this);
+                } else {
+                    ui.draggable.css({left:0,top:0}).clone().appendTo(this);
+                    $('.contestant .name').draggable({
+                        revert: 'invalid',
+                        scope: 'contestants',
+                    });
+                }
+            },
+            scope: 'contestants',
+        });
+
+        $('img.delete').droppable({
+            activate: function(event, ui) {
+                $(this).attr('src', '/delete-box-active.png');
+            },
+            deactivate: function(event, ui) {
+                $(this).attr('src', '/delete-box.png');
+            },
+            drop: function(event, ui) {
+                var $match = ui.draggable.closest('.match');
+                ui.draggable.remove();
+                if ($match.is(':not(:has(.name))')) {
+                    $match.remove();
+                }
+            },
+            scope: 'contestants',
+        });
     }
 
     $(document).ready(function() {
@@ -32,7 +108,7 @@
             if (event.which == 13 && $(this).val().trim()) {
                 $newContestant = $('<div class="name">').html($(this).val());
 
-                $bracket = $(this).closest('.contest').find('table.bracket').first();
+                $bracket = $(this).closest('.contest').find('.bracket').first();
                 $target = $bracket.find('.match:not(.prototype) .contestant:not(:has(.name))').first();
                 if (! $target.length) {
                     $prototype = $bracket.find('.match.prototype');
@@ -44,6 +120,7 @@
                 $(this).val('');
                 $('.contestant .name').draggable({
                     revert: 'invalid',
+                    scope: 'contestants',
                 });
             }
         });
@@ -94,7 +171,7 @@
         //    }
         //});
 
-        $('div.contests').on('click', '.contest.new a', function() {
+        $('div.contests').on('click', '.contest.new a.new', function() {
             $.ajax({
                 url: '/contest/new',
                 context: this,
@@ -116,6 +193,12 @@
                     },
                 });
             }
+        });
+
+        $('div.contests').on('click', '.bracket a.new-match', function() {
+            $prototype = $(this).closest('.bracket').find('.match.prototype');
+            $clone = $prototype.clone().removeClass('prototype');
+            $clone.insertBefore($prototype);
         });
 
         $('div.contests').on('dblclick', '.contestant', function() {
@@ -144,53 +227,6 @@
             },
         });
 
-        $('table.bracket tbody').sortable({
-            axis: 'y',
-            handle: '.handle',
-            items: '.match',
-            update: sync,
-        });
-
-        $('.contestant .name').draggable({
-            revert: 'invalid',
-            scope: 'contestants',
-        });
-
-        $('.contestant').droppable({
-            activate: function(event, ui) {
-                if (! $(this).is(':has(.name)')) {
-                    $(this).addClass('active-droppable');
-                }
-            },
-            deactivate: function(event, ui) {
-                $(this).removeClass('active-droppable');
-            },
-            drop: function(event, ui) {
-                if ($(this).is(':has(.name)')) {
-                    ui.draggable.css({left:0,top:0});
-                } else if (ui.draggable.closest('.bracket').is($(this).closest('.bracket'))) {
-                    ui.draggable.css({left:0,top:0}).appendTo(this);
-                } else {
-                    ui.draggable.css({left:0,top:0}).clone().appendTo(this);
-                    $('.contestant .name').draggable({
-                        revert: 'invalid',
-                    });
-                }
-            },
-            scope: 'contestants',
-        });
-
-        $('img.delete').droppable({
-            activate: function(event, ui) {
-                $(this).attr('src', '/delete-box-active.png');
-            },
-            deactivate: function(event, ui) {
-                $(this).attr('src', '/delete-box.png');
-            },
-            drop: function(event, ui) {
-                ui.draggable.remove();
-            },
-            scope: 'contestants',
-        });
+        setupDragging();
     });
 })(jQuery)

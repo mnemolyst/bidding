@@ -1,7 +1,7 @@
 mixin contest(contest)
     if contest === null
         .contest.new
-            a(href="javascript:void(null)") new
+            a.new(href="javascript:void(null)") new
     else
         .contest(data-contest-id=contest._id.toString(), data-priority=contest.priority)
             .controls
@@ -20,24 +20,32 @@ mixin contest(contest)
             br
             b Delete contestant:&nbsp;
             img(class="delete" src="/delete-box.png")
+            br
+            br
             table.brackets
                 tr
                     each bracket in contest.brackets
-                        td
-                            +bracket(bracket)
+                        +bracket(bracket)
+                    +bracket()
+            br
             table.bids
                 tr
                     each bids, type in contest.bids
                         th= type
                 tr
-                    each bidType in contest.bids
-                        +bidType(bidType)
+                    each bids, type in contest.bids
+                        +bidType(bids, type)
 
 mixin bracket(bracket)
-    table.bracket
-        each match in bracket
-            +match(match)
-        +match()
+    td.bracket(class=(bracket ? '' : 'prototype'))
+        table
+            tr
+                th
+                    a.new-match(href="javascript:void(null)") new match
+            if bracket
+                each match in bracket
+                    +match(match)
+            +match()
 
 mixin match(match)
     tr.match(class=(match ? '' : 'prototype'))
@@ -51,8 +59,13 @@ mixin match(match)
                     .name(class=(match.contestants[1] == match.winner ? 'winner' : ''))= match.contestants[1]
         td.handle
 
-mixin bidType(bidType)
-    td
-        each bid in bidType
-            .bid #{bid.bidder}&nbsp;:&nbsp;$#{bid.amount}&nbsp;on&nbsp;#{bid.on}
+mixin bidType(bids, type)
+    td.bid-type(data-type=type)
+        each bid in bids
+            .bid
+                span.bidder(data-val=bid.bidder)= bid.bidder
+                | &nbsp;:&nbsp;
+                span.amount(data-val=bid.amount) $#{bid.amount}
+                | &nbsp;on&nbsp;
+                span.on(data-val=bid.on)= bid.on
         a.new-bid(href="javascript:void(null)") new
