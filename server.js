@@ -134,18 +134,35 @@ function toteBoard(contest) {
         }
     }
 
+    console.log(board);
+
     return board;
 }
 
+// Homepage
 app.get('/', function(req, res, next) {
     mongo.connect(mongoUrl, function(err, db) {
         var queries = [
             queryAll(db, 'contests'),
-            //queryAll(db, 'contestants'),
-            //queryAll(db, 'bidders')
         ];
 
+        // Little experiment with promises
         p.when(queries).then(function() {
+            var contests = [], contest, board, bidOn;
+            for (var i = 0; i < params['contests'].length; i++) {
+                contest = params['contests'][i];
+                board = toteBoard(contest);
+                for (var j in contest.bids) {
+                    for (var k = 0; k < contest.bids[j].length; k++) {
+                        bidOn = contest.bids[j][k].on;
+                        if (bidOn in board[j]) {
+                            contest.bids[j][k].payout = board[j][bidOn] * contest.bids[j][k].amount;
+                        } else {
+                            contest.bids[j][k].payout = Number.NaN;
+                        }
+                    }
+                }
+            }
             res.render('index', {
                 contests: params['contests'],
             });
@@ -160,7 +177,8 @@ app.get('/debbug', function(req, res, next) {
     }
 });
 
-app.get('/contest/new', function(req, res, next) {
+// Create new contest
+app.post('/contest/new', function(req, res, next) {
     mongo.connect(mongoUrl, function(err, db) {
         db.collection('contests').count({}, {}, function(err, count) {
             if (err) throw err;
@@ -187,7 +205,20 @@ app.get('/contest/new', function(req, res, next) {
     });
 });
 
+// PUT a contest
 app.put('/contest/:id', function(req, res, next) {
+    var contestants = new Array();
+    for (var i = 0; i < req.body.brackets.length; i++) {
+        for (var j = 0; j < req.body.brackets[i].length; j++) {
+            for (var k = 0; k < req.body.brackets[i][j].contestants.length; k++) {
+                if (contestants.indexOf(req.body.brackets[i][j].contestants[k]) === -1) {
+                    contestants.push(req.body.brackets[i][j].contestants[k]);
+                }
+            }
+        }
+    }
+    req.body.contestants = contestants.sort();
+
     mongo.connect(mongoUrl, function(err, db) {
         db.collection('contests').replaceOne(
             {_id: new ObjectId(req.params.id)},
@@ -213,32 +244,34 @@ app.put('/contest/:id', function(req, res, next) {
     });
 });
 
-app.post('/contest/:id/contestants', function(req, res, next) {
-    mongo.connect(mongoUrl, function(err, db) {
-        db.collection('contests').findOneAndUpdate(
-            {_id: new ObjectId(req.params.id)},
-            {$set: {
-                vig: req.body.vig,
-                contestants: req.body.contestants,
-            }},
-            {returnOriginal: false},
-            function(err, r) {
-                if (err) throw err;
+// POST a contest's contestants
+//app.post('/contest/:id/contestants', function(req, res, next) {
+//    mongo.connect(mongoUrl, function(err, db) {
+//        db.collection('contests').findOneAndUpdate(
+//            {_id: new ObjectId(req.params.id)},
+//            {$set: {
+//                vig: req.body.vig,
+//                contestants: req.body.contestants,
+//            }},
+//            {returnOriginal: false},
+//            function(err, r) {
+//                if (err) throw err;
+//
+//                if (r.ok === 1) {
+//                    // Compute odds for each contestant
+//                    //var contest = toteBoard(r.value);
+//                    res.render('contest', {contest: r.value});
+//                } else {
+//                    res.sendStatus(500);
+//                }
+//
+//                db.close();
+//            }
+//        );
+//    });
+//});
 
-                if (r.ok === 1) {
-                    // Compute odds for each contestant
-                    //var contest = toteBoard(r.value);
-                    res.render('contest', {contest: r.value});
-                } else {
-                    res.sendStatus(500);
-                }
-
-                db.close();
-            }
-        );
-    });
-});
-
+// Delete a contest
 app.post('/contest/:id/delete', function(req, res, next) {
     mongo.connect(mongoUrl, function(err, db) {
         db.collection('contests').findOneAndDelete(
@@ -259,6 +292,7 @@ app.post('/contest/:id/delete', function(req, res, next) {
     });
 });
 
+// Reorder contests (via "priority" property)
 app.post('/contests/reorder', function(req, res, next) {
     mongo.connect(mongoUrl, function(err, db) {
         var queries = [];
@@ -291,6 +325,7 @@ app.post('/contests/reorder', function(req, res, next) {
     });
 });
 
+// Display a contest's tote board
 app.get('/contest/:id/tote', function(req, res, next) {
     mongo.connect(mongoUrl, function(err, db) {
         db.collection('contests').find({_id: new ObjectId(req.params.id)}).limit(1).next(function(err, doc) {

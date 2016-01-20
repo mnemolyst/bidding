@@ -3,6 +3,9 @@
     margin:5px 50px 0px;
     padding:5px;
 }
+.contest.modified {
+    border-color:red;
+}
 .contest td {
 }
 .contest input {
@@ -16,6 +19,7 @@
 }
 table.brackets {
     empty-cells:show;
+    position:relative;
 }
 .bracket {
     border:1px solid;
@@ -26,8 +30,7 @@ table.brackets {
 .match .contestants {
     border:1px solid;
 }
-.match .handle {
-    background:lightpink;
+.match .controls {
     border:1px solid;
     cursor:ns-resize;
     width:15px;
@@ -54,6 +57,9 @@ table.bids td {
 }
 table.bids td:last-child {
     border-right:none;
+}
+table.bids .bid .payout {
+    display:none;
 }
 a {
     color:orangered;

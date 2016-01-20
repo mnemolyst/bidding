@@ -1,6 +1,14 @@
 (function($) {
-    function sync() {
-        var $contest = $(this).closest('.contest');
+    var syncXhr = null;
+
+    function sync($contest) {
+        $contest = $contest || $(this).closest('.contest');
+
+        if (syncXhr !== null && syncXhr.readyState !== 4) {
+            //$contest.addClass('modified');
+            return false;
+        }
+
         var vig = parseFloat($contest.find('.vig').val());
         var data = {
             vig: (vig !== Math.NaN && vig >= 0 && vig <= 1) ? vig : 0.15,
@@ -18,7 +26,7 @@
             $(e).find('.match:not(.prototype)').each(function(j, f) {
                 var match = {
                     contestants: $(f).find('.name').map(function(k,g){return $(g).text()}).get().slice(0, 2),
-                    winner: $(f).find('.contestant.winner').first().text(),
+                    winner: $(f).find('.name.winner').first().text(),
                 };
                 bracket.push(match);
             });
@@ -39,10 +47,31 @@
             data: JSON.stringify(data),
             contentType: 'application/json',
             method: 'PUT',
-            context: this,
+            xhr: function() {
+                //if (syncXhr !== null && syncXhr.readyState !== 4) {
+                //    syncXhr.abort();
+                //}
+                syncXhr = new XMLHttpRequest();
+                return syncXhr;
+            },
+            beforeSend: function() {
+                var $img = $('<img src="/loading.gif" class="loading-gif" />');
+                $img.css({
+                    position: 'absolute',
+                    right: '-35px',
+                    top: '0px',
+                });
+                $img.appendTo($contest.find('.brackets'));
+            },
+            context: $contest,
             success: function(data) {
-                $(this).closest('.contest').replaceWith(data);
-                setupDragging();
+                $(this).find('.loading-gif').remove();
+                //$(this).removeClass('modified');
+                //$('.contest.modified').each(function(i, e) {
+                //    sync.call(e);
+                //});
+                //$(this).closest('.contest').replaceWith(data);
+                //setupDragging();
             },
         });
     }
@@ -50,7 +79,7 @@
     function setupDragging() {
         $('.bracket tbody').sortable({
             axis: 'y',
-            handle: '.handle',
+            handle: '.controls .move',
             items: '.match',
             update: sync,
         });
@@ -74,8 +103,10 @@
                     ui.draggable.css({left:0,top:0});
                 } else if (ui.draggable.closest('.bracket').is($(this).closest('.bracket'))) {
                     ui.draggable.css({left:0,top:0}).appendTo(this);
+                    sync.call(this);
                 } else {
-                    ui.draggable.css({left:0,top:0}).clone().appendTo(this);
+                    ui.draggable.css({left:0,top:0}).clone().removeClass('winner').appendTo(this);
+                    sync.call(this);
                     $('.contestant .name').draggable({
                         revert: 'invalid',
                         scope: 'contestants',
@@ -95,28 +126,88 @@
             drop: function(event, ui) {
                 var $match = ui.draggable.closest('.match');
                 ui.draggable.remove();
-                if ($match.is(':not(:has(.name))')) {
-                    $match.remove();
-                }
+                sync.call(this);
             },
             scope: 'contestants',
         });
     }
 
+    function evaluateOutcome($contest) {
+        var exacta = [];
+        var trifecta = [];
+        var $brackets = $contest.find('.bracket:not(.prototype)');
+        $('.bid').css('color', 'initial');
+        $('.payout').hide();
+
+        for (var i = -3; i < 0; i++) {
+            var $bracket = $brackets.eq(i);
+            $bracket.find('.winner').each(function() {
+                var name = $(this).text().trim();
+
+                $contest.find('.bids .bid-type.show .bid').each(function() {
+                    if ($(this).find('.on').text().trim() === name) {
+                        $(this).css('color', 'green');
+                        $(this).find('.payout').show();
+                    }
+                });
+                if (i <= -2) {
+                    $contest.find('.bids .bid-type.place .bid').each(function() {
+                        if ($(this).find('.on').text().trim() === name) {
+                            $(this).css('color', 'green');
+                            $(this).find('.payout').show();
+                        }
+                    });
+                }
+                if (i == -1) {
+                    $contest.find('.bids .bid-type.win .bid').each(function() {
+                        if ($(this).find('.on').text().trim() === name) {
+                            $(this).css('color', 'green');
+                            $(this).find('.payout').show();
+                        }
+                    });
+                }
+
+                if (i == -3) {
+                    trifecta.push(name);
+                } else if (i == -2) {
+                    exacta.push(name);
+                    trifecta = trifecta.concat(trifecta.filter(function(val) {
+                        return val.length == 1
+                    }).map(function(val) {
+                        return [val, name];
+                    }));
+                } else {
+                    exacta = exacta.concat(exacta.filter(function(val) {
+                        return val.length == 1
+                    }).map(function(val) {
+                        return [val, name];
+                    }));
+                    trifecta = trifecta.concat(trifecta.filter(function(val) {
+                        return val.length == 2
+                    }).map(function(val) {
+                        return [val[0], val[1], name];
+                    }));
+                }
+            });
+        }
+        for // TODO loop over bids and check in winner type lists
+    }
+
     $(document).ready(function() {
         $('div.contests').on('keydown', '.new-contestant', function(event) {
             if (event.which == 13 && $(this).val().trim()) {
-                $newContestant = $('<div class="name">').html($(this).val());
+                var $newContestant = $('<div class="name">').html($(this).val());
 
-                $bracket = $(this).closest('.contest').find('.bracket').first();
-                $target = $bracket.find('.match:not(.prototype) .contestant:not(:has(.name))').first();
+                var $bracket = $(this).closest('.contest').find('.bracket').first();
+                var $target = $bracket.find('.match:not(.prototype) .contestant:not(:has(.name))').first();
                 if (! $target.length) {
-                    $prototype = $bracket.find('.match.prototype');
-                    $clone = $prototype.clone().removeClass('prototype');
+                    var $prototype = $bracket.find('.match.prototype');
+                    var $clone = $prototype.clone().removeClass('prototype');
                     $clone.insertBefore($prototype);
                     $target = $clone.find('.contestant:not(:has(.name))').first();
                 }
                 $target.append($newContestant);
+                sync.call(this);
                 $(this).val('');
                 $('.contestant .name').draggable({
                     revert: 'invalid',
@@ -125,63 +216,21 @@
             }
         });
 
-        //$('div.contests').on('keydown', 'input', function(event) {
-        //    if (event.which == 13) {
-        //        var vig = parseFloat($(this).closest('.vig').val());
-        //        var data = {
-        //            vig: (vig !== Math.NaN && vig >= 0 && vig <= 1) ? vig : 0.15,
-        //            contestants: [],
-        //        };
-        //        $(this).closest('.contest').find('.contestant').each(function(i, e) {
-        //            var name = $(e).find('.name').val().trim();
-        //            var bids = [];
-        //            $(e).find('.bids .bid').each(function(j, f) {
-        //                var bidder = $(f).find('.bidder').val().trim();
-        //                var amount = parseFloat($(f).find('.amount').val());
-        //                if (bidder && amount) {
-        //                    bids.push({
-        //                        bidder: bidder,
-        //                        amount: amount,
-        //                    })
-        //                }
-        //            });
-        //            if (name) {
-        //                data['contestants'].push({
-        //                    name: name,
-        //                    bids: bids,
-        //                });
-        //            }
-        //        });
-
-        //        var contestId = $(this).closest('[data-contest-id]').data('contest-id');
-        //        var inputIdx = $('input').index(this);
-        //        $.ajax({
-        //            url: '/contest/' + contestId + '/contestants',
-        //            data: JSON.stringify(data),
-        //            contentType: 'application/json',
-        //            method: 'POST',
-        //            context: this,
-        //            success: function(data) {
-        //                $(this).closest('.contest').replaceWith(data);
-        //                $('input:eq(' + (inputIdx + 1) + ')').focus();
-        //            },
-        //        });
-        //    } else {
-        //        //alert(event.which);
-        //    }
-        //});
-
+        // New contest
         $('div.contests').on('click', '.contest.new a.new', function() {
             $.ajax({
                 url: '/contest/new',
+                method: 'POST',
                 context: this,
                 success: function(data) {
                     $(this).closest('.contest.new').before(data);
+                    setupDragging();
                 },
             });
         });
 
-        $('div.contests').on('click', 'a.delete', function() {
+        // Delete contest
+        $('div.contests').on('click', '.contest > .controls > a.delete', function() {
             if (confirm('Really delete this contest?')) {
                 var contestId = $(this).closest('[data-contest-id]').data('contest-id');
                 $.ajax({
@@ -195,15 +244,36 @@
             }
         });
 
+        // New match
         $('div.contests').on('click', '.bracket a.new-match', function() {
-            $prototype = $(this).closest('.bracket').find('.match.prototype');
-            $clone = $prototype.clone().removeClass('prototype');
+            var $bracket = $(this).closest('.bracket');
+            if ($bracket.is('.prototype')) {
+                $bracket = $bracket.clone().removeClass('prototype').insertBefore($bracket);
+            }
+            var $prototype = $bracket.find('.match.prototype');
+            var $clone = $prototype.clone().removeClass('prototype');
             $clone.insertBefore($prototype);
+            sync.call(this);
+            setupDragging();
         });
 
-        $('div.contests').on('dblclick', '.contestant', function() {
-            $(this).siblings().removeClass('winner');
+        // Delete match
+        $('div.contests').on('click', '.match > .controls > a.delete', function() {
+            var $contest = $(this).closest('.contest');
+            var $bracket = $(this).closest('.bracket');
+            $(this).closest('.match').remove();
+            if ($bracket.is(':not(:has(.match:not(.prototype)))')) {
+                $bracket.remove();
+            }
+            sync.call($contest);
+        });
+
+        // Toggle winner
+        $('div.contests').on('dblclick', '.contestant .name', function() {
+            $(this).parent().siblings().children().removeClass('winner');
             $(this).toggleClass('winner');
+            sync.call(this);
+            evaluateOutcome($(this).closest('.contest'));
         });
 
         $('div.contests').sortable({

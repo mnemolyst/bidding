@@ -57,10 +57,13 @@ mixin match(match)
             .contestant
                 if match && match.contestants.length > 1
                     .name(class=(match.contestants[1] == match.winner ? 'winner' : ''))= match.contestants[1]
-        td.handle
+        td.controls
+            a.delete(href="javascript:void(null)") X
+            br
+            a.move(href="javascript:void(null)") &vArr;
 
 mixin bidType(bids, type)
-    td.bid-type(data-type=type)
+    td.bid-type(class=type, data-type=type)
         each bid in bids
             .bid
                 span.bidder(data-val=bid.bidder)= bid.bidder
@@ -68,4 +71,6 @@ mixin bidType(bids, type)
                 span.amount(data-val=bid.amount) $#{bid.amount}
                 | &nbsp;on&nbsp;
                 span.on(data-val=bid.on)= bid.on
+                .payout
+                    | Payout:&nbsp;$#{bid.payout}
         a.new-bid(href="javascript:void(null)") new
