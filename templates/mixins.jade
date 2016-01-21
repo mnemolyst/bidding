@@ -28,13 +28,7 @@ mixin contest(contest)
                         +bracket(bracket)
                     +bracket()
             br
-            table.bids
-                tr
-                    each bids, type in contest.bids
-                        th= type
-                tr
-                    each bids, type in contest.bids
-                        +bidType(bids, type)
+            +bids(contest.bids)
 
 mixin bracket(bracket)
     td.bracket(class=(bracket ? '' : 'prototype'))
@@ -62,15 +56,27 @@ mixin match(match)
             br
             a.move(href="javascript:void(null)") &vArr;
 
+mixin bids(bids)
+    table.bids
+        tr
+            each typeBids, type in bids
+                th= type
+        tr
+            each typeBids, type in bids
+                +bidType(typeBids, type)
+
 mixin bidType(bids, type)
     td.bid-type(class=type, data-type=type)
         each bid in bids
-            .bid
-                span.bidder(data-val=bid.bidder)= bid.bidder
-                | &nbsp;:&nbsp;
-                span.amount(data-val=bid.amount) $#{bid.amount}
-                | &nbsp;on&nbsp;
-                span.on(data-val=bid.on)= bid.on
-                .payout
-                    | Payout:&nbsp;$#{bid.payout}
+            +bid(bid)
         a.new-bid(href="javascript:void(null)") new
+
+mixin bid(bid)
+    .bid
+        span.bidder(data-val=bid.bidder)= bid.bidder
+        | &nbsp;:&nbsp;
+        span.amount(data-val=bid.amount) $#{bid.amount}
+        | &nbsp;on&nbsp;
+        span.on(data-val=bid.on)= bid.on
+        .payout
+            | Payout:&nbsp;$#{bid.payout}

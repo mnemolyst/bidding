@@ -134,8 +134,6 @@ function toteBoard(contest) {
         }
     }
 
-    console.log(board);
-
     return board;
 }
 
@@ -148,13 +146,13 @@ app.get('/', function(req, res, next) {
 
         // Little experiment with promises
         p.when(queries).then(function() {
-            var contests = [], contest, board, bidOn;
+            var contests = [];
             for (var i = 0; i < params['contests'].length; i++) {
-                contest = params['contests'][i];
-                board = toteBoard(contest);
+                var contest = params['contests'][i];
+                var board = toteBoard(contest);
                 for (var j in contest.bids) {
                     for (var k = 0; k < contest.bids[j].length; k++) {
-                        bidOn = contest.bids[j][k].on;
+                        var bidOn = contest.bids[j][k].on;
                         if (bidOn in board[j]) {
                             contest.bids[j][k].payout = board[j][bidOn] * contest.bids[j][k].amount;
                         } else {
@@ -205,6 +203,19 @@ app.post('/contest/new', function(req, res, next) {
     });
 });
 
+// GET a contest
+app.get('/contest/:id', function(req, res, next) {
+    mongo.connect(mongoUrl, function(err, db) {
+        db.collection('contests').find({_id: new ObjectId(req.params.id)}).limit(1).next(function(err, doc) {
+            if (err) throw err;
+
+            res.render('contest', {contest: doc});
+
+            db.close();
+        });
+    });
+});
+
 // PUT a contest
 app.put('/contest/:id', function(req, res, next) {
     var contestants = new Array();
@@ -244,32 +255,61 @@ app.put('/contest/:id', function(req, res, next) {
     });
 });
 
-// POST a contest's contestants
-//app.post('/contest/:id/contestants', function(req, res, next) {
-//    mongo.connect(mongoUrl, function(err, db) {
-//        db.collection('contests').findOneAndUpdate(
-//            {_id: new ObjectId(req.params.id)},
-//            {$set: {
-//                vig: req.body.vig,
-//                contestants: req.body.contestants,
-//            }},
-//            {returnOriginal: false},
-//            function(err, r) {
-//                if (err) throw err;
-//
-//                if (r.ok === 1) {
-//                    // Compute odds for each contestant
-//                    //var contest = toteBoard(r.value);
-//                    res.render('contest', {contest: r.value});
-//                } else {
-//                    res.sendStatus(500);
-//                }
-//
-//                db.close();
-//            }
-//        );
-//    });
-//});
+// Add a new bid to a contest
+app.post('/contest/:id/bid', function(req, res, next) {
+    mongo.connect(mongoUrl, function(err, db) {
+        db.collection('contests').find({_id: new ObjectId(req.params.id)}).limit(1).next(function(err, doc) {
+            if (err) throw err;
+
+            switch (req.body.type) {
+                case 'win': //fallthrough
+                case 'place':
+                case 'show':
+                    if (req.body.on.split(',').length !== 1) {
+                        res.status(400).send(req.body.type + ' bids must include only one name');
+                    }
+                    break;
+                case 'exacta':
+                    if (req.body.on.split(',').length !== 2) {
+                        res.status(400).send(req.body.type + ' bids must list two comma-separated names');
+                    }
+                    break;
+                case 'trifecta':
+                    if (req.body.on.split(',').length !== 3) {
+                        res.status(400).send(req.body.type + ' bids must list three comma-separated names: ' + req.body.on.split(',').length);
+                    }
+                    break;
+            }
+
+            var bid = {
+                bidder: req.body.bidder,
+                amount: req.body.amount,
+                on: req.body.on,
+            };
+            var bids = doc.bids;
+            bids[req.body.type].push(bid);
+
+            db.collection('contests').findOneAndUpdate(
+                {_id: new ObjectId(req.params.id)},
+                {$set: {
+                    bids: bids,
+                }},
+                {returnOriginal: false},
+                function(err, r) {
+                    if (err) throw err;
+
+                    if (r.ok === 1) {
+                        res.render('bids', {bids: r.value.bids});
+                    } else {
+                        res.sendStatus(500);
+                    }
+
+                    db.close();
+                }
+            );
+        });
+    });
+});
 
 // Delete a contest
 app.post('/contest/:id/delete', function(req, res, next) {

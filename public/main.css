@@ -70,3 +70,6 @@ a {
     background:#effbee;
     border:1px solid #aefca1;
 }
+#new-bid-form {
+    display:none;
+}

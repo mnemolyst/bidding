@@ -1,8 +1,8 @@
 (function($) {
     var syncXhr = null;
 
-    function sync($contest) {
-        $contest = $contest || $(this).closest('.contest');
+    function sync() {
+        $contest = $(this).closest('.contest');
 
         if (syncXhr !== null && syncXhr.readyState !== 4) {
             //$contest.addClass('modified');
@@ -42,7 +42,7 @@
             });
         });
 
-        $.ajax({
+        return $.ajax({
             url: '/contest/' + $contest.data('contest-id'),
             data: JSON.stringify(data),
             contentType: 'application/json',
@@ -74,6 +74,17 @@
                 //setupDragging();
             },
         });
+    }
+
+    function refresh() {
+        $contest = $(this).closest('.contest');
+
+        if (syncXhr !== null && syncXhr.readyState !== 4) {
+            //$contest.addClass('modified');
+            return false;
+        }
+
+        $contest.load('/contest/' + $contest.data('contest-id'), function() { evaluateOutcome(); });
     }
 
     function setupDragging() {
@@ -168,32 +179,58 @@
                 }
 
                 if (i == -3) {
-                    trifecta.push(name);
+                    trifecta.push([name]);
                 } else if (i == -2) {
-                    exacta.push(name);
+                    exacta.push([name]);
                     trifecta = trifecta.concat(trifecta.filter(function(val) {
-                        return val.length == 1
+                        return (val.length == 1 && val[0] !== name);
                     }).map(function(val) {
-                        return [val, name];
+                        return [val[0], name];
                     }));
                 } else {
                     exacta = exacta.concat(exacta.filter(function(val) {
-                        return val.length == 1
+                        return (val.length == 1 && val[0] !== name);
                     }).map(function(val) {
-                        return [val, name];
+                        return [val[0], name];
                     }));
                     trifecta = trifecta.concat(trifecta.filter(function(val) {
-                        return val.length == 2
+                        return (val.length == 2 && val[0] !== name && val[1] !== name);
                     }).map(function(val) {
                         return [val[0], val[1], name];
                     }));
                 }
             });
         }
-        for // TODO loop over bids and check in winner type lists
+        exacta = exacta.filter(function(val) { return val.length == 2; }).map(function(val) { return val.join(', '); });
+        trifecta = trifecta.filter(function(val) { return val.length == 3; }).map(function(val) { return val.join(', '); });
+
+        $contest.find('.bids .bid-type.exacta .bid').each(function() {
+            if (exacta.indexOf($(this).find('.on').text().trim()) !== -1) {
+                $(this).css('color', 'green');
+                $(this).find('.payout').show();
+            }
+        });
+        $contest.find('.bids .bid-type.trifecta .bid').each(function() {
+            if (trifecta.indexOf($(this).find('.on').text().trim()) !== -1) {
+                $(this).css('color', 'green');
+                $(this).find('.payout').show();
+            }
+        });
     }
 
     $(document).ready(function() {
+        // Change the vig
+        $('div.contests').on('keydown', '.vig', function(event) {
+            if (event.which == 13) {
+                var $contest = $(this).closest('.contest');
+                var vig = parseFloat($(this).val());
+                vig = (vig !== Math.NaN && vig >= 0 && vig <= 1) ? vig : 0.15,
+                $(this).val(vig);
+                $.when(sync.call($contest)).then(refresh);
+            }
+        });
+
+        // New contestant
         $('div.contests').on('keydown', '.new-contestant', function(event) {
             if (event.which == 13 && $(this).val().trim()) {
                 var $newContestant = $('<div class="name">').html($(this).val());
@@ -255,6 +292,7 @@
             $clone.insertBefore($prototype);
             sync.call(this);
             setupDragging();
+            evaluateOutcome($(this).closest('.contest'));
         });
 
         // Delete match
@@ -266,6 +304,7 @@
                 $bracket.remove();
             }
             sync.call($contest);
+            evaluateOutcome($(this).closest('.contest'));
         });
 
         // Toggle winner
@@ -275,6 +314,40 @@
             sync.call(this);
             evaluateOutcome($(this).closest('.contest'));
         });
+
+        // New bid
+        $('div.contests').on('click', 'a.new-bid', function() {
+            var $contest = $(this).closest('.contest');
+            var $bidType = $(this).closest('.bid-type');
+            $('#new-bid-form').dialog({
+                close: function() {
+                    $(this).dialog('destroy');
+                },
+                buttons: {
+                    Submit: function() {
+                        $.ajax({
+                            url: '/contest/' + $contest.data('contest-id') + '/bid',
+                            data: JSON.stringify({
+                                type: $bidType.data('type'),
+                                bidder: $(this).find('input.bidder').val(),
+                                amount: $(this).find('input.amount').val(),
+                                on: $(this).find('input.on').val(),
+                            }),
+                            contentType: 'application/json',
+                            method: 'POST',
+                            error: function(jqXhr) {
+                                alert(jqXhr.responseText);
+                            },
+                            success: function(data) {
+                                $contest.find('.bids').replaceWith(data);
+                            },
+                        });
+                    },
+                },
+            });
+        });
+
+        // Suggest contestants TODO
 
         $('div.contests').sortable({
             items: '.contest:not(.new)',

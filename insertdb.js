@@ -77,7 +77,7 @@ mongo.connect(mongoUrl, function(err, db) {
                 },
             },
             {
-                priority: 0,
+                priority: 1,
                 vig: 0.15,
                 contestants: [
                     'Alice',
