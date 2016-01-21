@@ -65,15 +65,15 @@ mixin bids(bids)
             each typeBids, type in bids
                 +bidType(typeBids, type)
 
-mixin bidType(bids, type)
+mixin bidType(typeBids, type)
     td.bid-type(class=type, data-type=type)
-        each bid in bids
+        each bid in typeBids
             +bid(bid)
             hr
         a.new-bid(href="javascript:void(null)") new
 
 mixin bid(bid)
-    .bid
+    .bid(class=(bid.won ? 'won' : ''))
         span.bidder(data-val=bid.bidder)= bid.bidder
         | &nbsp;:&nbsp;
         span.amount(data-val=bid.amount) $#{bid.amount}

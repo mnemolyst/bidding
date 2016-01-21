@@ -89,7 +89,23 @@
             success: function(data) {
                 var $newContest = $(data)
                 $contest.replaceWith($newContest);
-                evaluateOutcome($newContest);
+                evaluateOutcome.call($newContest);
+            },
+        });
+    }
+
+    function refreshBids() {
+        var $contest = $(this).closest('.contest');
+
+        if (syncXhr !== null && syncXhr.readyState !== 4) {
+            //$contest.addClass('modified');
+            return false;
+        }
+
+        $.ajax({
+            url: '/contest/' + $contest.data('contest-id') + '/bids',
+            success: function(data) {
+                $contest.find('table.bids').replaceWith(data);
             },
         });
     }
@@ -150,12 +166,12 @@
         });
     }
 
-    function evaluateOutcome($contest) {
+    function evaluateOutcome() {
+        var $contest = $(this).closest('.contest');
         var exacta = [];
         var trifecta = [];
         var $brackets = $contest.find('.bracket:not(.prototype)');
-        $contest.find('.bid').css('color', 'initial');
-        $contest.find('.payout').hide();
+        $contest.find('.bid').removeClass('won');
 
         for (var i = -3; i < 0; i++) {
             var $bracket = $brackets.eq(i);
@@ -164,23 +180,20 @@
 
                 $contest.find('.bids .bid-type.show .bid').each(function() {
                     if ($(this).find('.on').text().trim() === name) {
-                        $(this).css('color', 'green');
-                        $(this).find('.payout').show();
+                        $(this).addClass('won');
                     }
                 });
                 if (i <= -2) {
                     $contest.find('.bids .bid-type.place .bid').each(function() {
                         if ($(this).find('.on').text().trim() === name) {
-                            $(this).css('color', 'green');
-                            $(this).find('.payout').show();
+                            $(this).addClass('won');
                         }
                     });
                 }
                 if (i == -1) {
                     $contest.find('.bids .bid-type.win .bid').each(function() {
                         if ($(this).find('.on').text().trim() === name) {
-                            $(this).css('color', 'green');
-                            $(this).find('.payout').show();
+                            $(this).addClass('won');
                         }
                     });
                 }
@@ -213,14 +226,12 @@
 
         $contest.find('.bids .bid-type.exacta .bid').each(function() {
             if (exacta.indexOf($(this).find('.on').text().trim()) !== -1) {
-                $(this).css('color', 'green');
-                $(this).find('.payout').show();
+                $(this).addClass('won');
             }
         });
         $contest.find('.bids .bid-type.trifecta .bid').each(function() {
             if (trifecta.indexOf($(this).find('.on').text().trim()) !== -1) {
-                $(this).css('color', 'green');
-                $(this).find('.payout').show();
+                $(this).addClass('won');
             }
         });
     }
@@ -299,7 +310,8 @@
             $clone.insertBefore($prototype);
             sync.call(this);
             setupDragging();
-            evaluateOutcome($(this).closest('.contest'));
+            //evaluateOutcome.call(this);
+            refreshBids.call(this);
         });
 
         // Delete match
@@ -311,7 +323,8 @@
                 $bracket.remove();
             }
             sync.call($contest);
-            evaluateOutcome($contest);
+            //evaluateOutcome.call($contest);
+            refreshBids.call($contest);
         });
 
         // Toggle winner
@@ -319,7 +332,8 @@
             $(this).parent().siblings().children().removeClass('winner');
             $(this).toggleClass('winner');
             sync.call(this);
-            evaluateOutcome($(this).closest('.contest'));
+            //evaluateOutcome.call(this);
+            refreshBids.call(this);
         });
 
         // New bid
@@ -342,13 +356,19 @@
                             }),
                             contentType: 'application/json',
                             method: 'POST',
+                            context: this,
                             error: function(jqXhr) {
                                 alert(jqXhr.responseText);
                             },
                             success: function(data) {
                                 $contest.find('.bids').replaceWith(data);
+                                //evaluateOutcome.call($contest);
+                                refreshBids.call($contest);
                             },
                         });
+                    },
+                    Clear: function() {
+                        $(this).find('input').val('');
                     },
                 },
             });
@@ -379,7 +399,8 @@
 
         setupDragging();
         $('.contest').each(function() {
-            evaluateOutcome($(this));
+            //evaluateOutcome.call(this);
+            refreshBids.call(this);
         });
     });
 })(jQuery)

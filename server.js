@@ -60,6 +60,10 @@ function permute(arr) {
 }
 
 function nChooseM(list, m) {
+    if (list.length === 0) {
+        return [];
+    }
+
     var p = {};
 
     function gen(a, n) {
@@ -107,14 +111,14 @@ function toteBoard(contest) {
 
         for (var i = 0; i < contest['bids'][type].length; i++) {
             var bid = contest['bids'][type][i];
-            typeTotal += bid['amount'];
+            typeTotal += Number(bid['amount']);
             if (! outcomeTotals.hasOwnProperty(bid['on'])) {
                 outcomeTotals[bid['on']] = 0;
             }
-            outcomeTotals[bid['on']] += bid['amount'];
+            outcomeTotals[bid['on']] += Number(bid['amount']);
         }
 
-        var afterVig = typeTotal * (1 - contest['vig']);
+        var afterVig = typeTotal * (1 - Number(contest['vig']));
 
         switch (type) {
             case 'win': //fallthrough
@@ -137,6 +141,116 @@ function toteBoard(contest) {
     return board;
 }
 
+function computePayout(contest) {
+    var winning = {
+        win: [],
+        place: [],
+        show: [],
+        exacta: [],
+        trifecta: [],
+    };
+    var brackets = contest.brackets.slice(-3);
+
+    // Assemble lists of winning bids, by bid type
+    for (var i = 0; i < brackets.length; i++) { // all brackets
+        var bracket = brackets[i];
+        for (var j = 0; j < bracket.length; j++) { // all matches in a bracket
+            var match = bracket[j];
+            var winner = match.winner.trim();
+            if (winner) {
+                if (i == 0) {
+                    winning['show'].push(winner);
+                    winning['trifecta'].push([winner]);
+                } else if (i == 1) {
+                    winning['place'].push(winner);
+                    if (winning['show'].indexOf(winner) === -1)
+                        winning['show'].push(winner);
+                    winning['exacta'].push([winner]);
+                    winning['trifecta'] = winning['trifecta'].concat(winning['trifecta'].filter(function(val) {
+                        return (val.length == 1 && val[0] !== winner);
+                    }).map(function(val) {
+                        return [val[0], winner];
+                    }));
+                } else if (i == 2) {
+                    winning['win'].push(winner);
+                    if (winning['place'].indexOf(winner) === -1)
+                        winning['place'].push(winner);
+                    if (winning['show'].indexOf(winner) === -1)
+                        winning['show'].push(winner);
+                    winning['exacta'] = winning['exacta'].concat(winning['exacta'].filter(function(val) {
+                        return (val.length == 1 && val[0] !== winner);
+                    }).map(function(val) {
+                        return [val[0], winner];
+                    }));
+                    winning['trifecta'] = winning['trifecta'].concat(winning['trifecta'].filter(function(val) {
+                        return (val.length == 2 && val[0] !== winner && val[1] !== winner);
+                    }).map(function(val) {
+                        return [val[0], val[1], winner];
+                    }));
+                }
+            }
+        }
+    }
+    winning['exacta'] = winning['exacta'].filter(function(val) { return val.length == 2; }).map(function(val) { return val.join(', '); });
+    winning['trifecta'] = winning['trifecta'].filter(function(val) { return val.length == 3; }).map(function(val) { return val.join(', '); });
+
+    // Sum bids
+    for (var bidType in contest.bids) { // each bid type
+        var typeTotal = 0;
+        var winPool = 0;
+        for (var j = 0; j < contest.bids[bidType].length; j++) { // each bid in a type
+            var amount = Number(contest.bids[bidType][j].amount);
+            var bidOn = contest.bids[bidType][j].on;
+            typeTotal += amount;
+            if (winning[bidType].indexOf(bidOn) !== -1) {
+                contest.bids[bidType][j].won = true;
+                winPool += amount;
+            } else {
+                contest.bids[bidType][j].won = false;
+            }
+        }
+        var afterVig = typeTotal * (1 - Number(contest.vig));
+
+        for (var j = 0; j < contest.bids[bidType].length; j++) {
+            var amount = Number(contest.bids[bidType][j].amount);
+            if (contest.bids[bidType][j].won) {
+                contest.bids[bidType][j].payout = Math.round(100 * afterVig * (amount / winPool)) / 100;
+            }
+        }
+    }
+
+    return contest;
+}
+
+//function computePayout(contest) {
+//    for (var type in contest['bids']) {
+//        var typeTotal = 0;
+//        var outcomeTotals = {};
+//
+//        for (var i = 0; i < contest['bids'][type].length; i++) {
+//            var bid = contest['bids'][type][i];
+//            typeTotal += Number(bid['amount']);
+//            if (! outcomeTotals.hasOwnProperty(bid['on'])) {
+//                outcomeTotals[bid['on']] = 0;
+//            }
+//            outcomeTotals[bid['on']] += Number(bid['amount']);
+//        }
+//    }
+//
+//    var board = toteBoard(contest);
+//    for (var j in contest.bids) {
+//        for (var k = 0; k < contest.bids[j].length; k++) {
+//            var bidOn = contest.bids[j][k].on;
+//            if (bidOn in board[j]) {
+//                contest.bids[j][k].payout = Math.round(100 * board[j][bidOn] * contest.bids[j][k].amount) / 100;
+//            } else {
+//                contest.bids[j][k].payout = Number.NaN;
+//            }
+//        }
+//    }
+//    return contest;
+//}
+
 // Homepage
 app.get('/', function(req, res, next) {
     mongo.connect(mongoUrl, function(err, db) {
@@ -148,28 +262,35 @@ app.get('/', function(req, res, next) {
         p.when(queries).then(function() {
             var contests = [];
             for (var i = 0; i < params['contests'].length; i++) {
-                var contest = params['contests'][i];
-                var board = toteBoard(contest);
-                for (var j in contest.bids) {
-                    for (var k = 0; k < contest.bids[j].length; k++) {
-                        var bidOn = contest.bids[j][k].on;
-                        if (bidOn in board[j]) {
-                            contest.bids[j][k].payout = board[j][bidOn] * contest.bids[j][k].amount;
-                        } else {
-                            contest.bids[j][k].payout = Number.NaN;
-                        }
-                    }
-                }
+                var contest = computePayout(params['contests'][i]);
+                contests.push(contest);
             }
             res.render('index', {
-                contests: params['contests'],
+                contests: contests,
             });
+            res.end();
             db.close();
         });
     });
 });
 
 app.get('/debbug', function(req, res, next) {
+    mongo.connect(mongoUrl, function(err, db) {
+        var queries = [
+            queryAll(db, 'contests'),
+        ];
+
+        // Little experiment with promises
+        p.when(queries).then(function() {
+            res.write(JSON.stringify(params['contests']));
+        });
+    });
+    //for (var i in process.env) {
+    //    res.write(i + ': ' + process.env[i] + '\n');
+    //}
+});
+
+app.get('/debbbug', function(req, res, next) {
     for (var i in process.env) {
         res.write(i + ': ' + process.env[i] + '\n');
     }
@@ -209,17 +330,7 @@ app.get('/contest/:id', function(req, res, next) {
         db.collection('contests').find({_id: new ObjectId(req.params.id)}).limit(1).next(function(err, doc) {
             if (err) throw err;
 
-            var board = toteBoard(doc);
-            for (var j in doc.bids) {
-                for (var k = 0; k < doc.bids[j].length; k++) {
-                    var bidOn = doc.bids[j][k].on;
-                    if (bidOn in board[j]) {
-                        doc.bids[j][k].payout = board[j][bidOn] * doc.bids[j][k].amount;
-                    } else {
-                        doc.bids[j][k].payout = Number.NaN;
-                    }
-                }
-            }
+            var contest = computePayout(doc);
 
             res.render('contest', {contest: doc});
 
@@ -254,7 +365,8 @@ app.put('/contest/:id', function(req, res, next) {
                     db.collection('contests').find({_id: new ObjectId(req.params.id)}).limit(1).next(function(err, doc) {
                         if (err) throw err;
 
-                        res.render('contest', {contest: doc});
+                        //res.render('contest', {contest: doc});
+                        res.send('OK');
 
                         db.close();
                     });
@@ -264,6 +376,20 @@ app.put('/contest/:id', function(req, res, next) {
                 }
             }
         );
+    });
+});
+
+// Get bids with payouts computed
+app.get('/contest/:id/bids', function(req, res, next) {
+    mongo.connect(mongoUrl, function(err, db) {
+        db.collection('contests').find({_id: new ObjectId(req.params.id)}).limit(1).next(function(err, doc) {
+            if (err) throw err;
+
+            var contest = computePayout(doc);
+            res.render('bids', {bids: contest.bids});
+
+            db.close();
+        });
     });
 });
 
@@ -288,7 +414,7 @@ app.post('/contest/:id/bid', function(req, res, next) {
                     break;
                 case 'trifecta':
                     if (req.body.on.split(',').length !== 3) {
-                        res.status(400).send(req.body.type + ' bids must list three comma-separated names: ' + req.body.on.split(',').length);
+                        res.status(400).send(req.body.type + ' bids must list three comma-separated names');
                     }
                     break;
             }
@@ -296,7 +422,8 @@ app.post('/contest/:id/bid', function(req, res, next) {
             var bid = {
                 bidder: req.body.bidder,
                 amount: req.body.amount,
-                on: req.body.on,
+                on: req.body.on.split(',').map(function(e){return e.trim()}).join(', '),
+                won: false,
             };
             var bids = doc.bids;
             bids[req.body.type].push(bid);
@@ -311,7 +438,8 @@ app.post('/contest/:id/bid', function(req, res, next) {
                     if (err) throw err;
 
                     if (r.ok === 1) {
-                        res.render('bids', {bids: r.value.bids});
+                        var contest = computePayout(r.value);
+                        res.render('bids', {bids: contest.bids});
                     } else {
                         res.sendStatus(500);
                     }

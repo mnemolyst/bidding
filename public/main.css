@@ -61,6 +61,12 @@ table.bids td:last-child {
 table.bids .bid .payout {
     display:none;
 }
+table.bids .bid.won {
+    color:green;
+}
+table.bids .bid.won .payout {
+    display:block;
+}
 a {
     color:orangered;
     font-weight:bold;
