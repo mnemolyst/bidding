@@ -209,6 +209,18 @@ app.get('/contest/:id', function(req, res, next) {
         db.collection('contests').find({_id: new ObjectId(req.params.id)}).limit(1).next(function(err, doc) {
             if (err) throw err;
 
+            var board = toteBoard(doc);
+            for (var j in doc.bids) {
+                for (var k = 0; k < doc.bids[j].length; k++) {
+                    var bidOn = doc.bids[j][k].on;
+                    if (bidOn in board[j]) {
+                        doc.bids[j][k].payout = board[j][bidOn] * doc.bids[j][k].amount;
+                    } else {
+                        doc.bids[j][k].payout = Number.NaN;
+                    }
+                }
+            }
+
             res.render('contest', {contest: doc});
 
             db.close();

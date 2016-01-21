@@ -69,6 +69,7 @@ mixin bidType(bids, type)
     td.bid-type(class=type, data-type=type)
         each bid in bids
             +bid(bid)
+            hr
         a.new-bid(href="javascript:void(null)") new
 
 mixin bid(bid)

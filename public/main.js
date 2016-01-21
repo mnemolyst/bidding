@@ -2,7 +2,7 @@
     var syncXhr = null;
 
     function sync() {
-        $contest = $(this).closest('.contest');
+        var $contest = $(this).closest('.contest');
 
         if (syncXhr !== null && syncXhr.readyState !== 4) {
             //$contest.addClass('modified');
@@ -77,14 +77,21 @@
     }
 
     function refresh() {
-        $contest = $(this).closest('.contest');
+        var $contest = $(this).closest('.contest');
 
         if (syncXhr !== null && syncXhr.readyState !== 4) {
             //$contest.addClass('modified');
             return false;
         }
 
-        $contest.load('/contest/' + $contest.data('contest-id'), function() { evaluateOutcome(); });
+        $.ajax({
+            url: '/contest/' + $contest.data('contest-id'),
+            success: function(data) {
+                var $newContest = $(data)
+                $contest.replaceWith($newContest);
+                evaluateOutcome($newContest);
+            },
+        });
     }
 
     function setupDragging() {
@@ -147,8 +154,8 @@
         var exacta = [];
         var trifecta = [];
         var $brackets = $contest.find('.bracket:not(.prototype)');
-        $('.bid').css('color', 'initial');
-        $('.payout').hide();
+        $contest.find('.bid').css('color', 'initial');
+        $contest.find('.payout').hide();
 
         for (var i = -3; i < 0; i++) {
             var $bracket = $brackets.eq(i);
@@ -304,7 +311,7 @@
                 $bracket.remove();
             }
             sync.call($contest);
-            evaluateOutcome($(this).closest('.contest'));
+            evaluateOutcome($contest);
         });
 
         // Toggle winner
@@ -371,5 +378,8 @@
         });
 
         setupDragging();
+        $('.contest').each(function() {
+            evaluateOutcome($(this));
+        });
     });
 })(jQuery)
