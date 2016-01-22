@@ -393,6 +393,24 @@ app.get('/contest/:id/bids', function(req, res, next) {
     });
 });
 
+// Autocomplete source for contestant names
+app.get('/suggest-contestant', function(req, res, next) {
+    var suggest = [];
+    var terms = req.query.term.split(',').map(function(e){return e.trim()});
+    var search = terms.slice(-1)[0].toLowerCase();
+    mongo.connect(mongoUrl, function(err, db) {
+        db.collection('contests').find().forEach(function(doc) {
+            suggest = suggest.concat(doc.contestants.filter(function(e) {
+                return e.toLowerCase().indexOf(search) === 0;
+            }));
+        }, function(err) {
+            suggest = suggest.map(function(e){return terms.slice(0,-1).concat([e.trim()]).join(', ')});
+            res.send(JSON.stringify(suggest));
+            db.close();
+        });
+    });
+});
+
 // Add a new bid to a contest
 app.post('/contest/:id/bid', function(req, res, next) {
     mongo.connect(mongoUrl, function(err, db) {

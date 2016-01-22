@@ -58,6 +58,16 @@ table.bids td {
 table.bids td:last-child {
     border-right:none;
 }
+table.bids .bid {
+    margin-right:15px;
+    position:relative;
+}
+table.bids .controls {
+    float:none;
+    position:absolute;
+    right:-15px;
+    top:0px;
+}
 table.bids .bid .payout {
     display:none;
 }

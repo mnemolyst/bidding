@@ -238,7 +238,7 @@
 
     $(document).ready(function() {
         // Change the vig
-        $('div.contests').on('keydown', '.vig', function(event) {
+        $('#contests').on('keydown', '.vig', function(event) {
             if (event.which == 13) {
                 var $contest = $(this).closest('.contest');
                 var vig = parseFloat($(this).val());
@@ -249,7 +249,7 @@
         });
 
         // New contestant
-        $('div.contests').on('keydown', '.new-contestant', function(event) {
+        $('#contests').on('keydown', '.new-contestant', function(event) {
             if (event.which == 13 && $(this).val().trim()) {
                 var $newContestant = $('<div class="name">').html($(this).val());
 
@@ -272,7 +272,7 @@
         });
 
         // New contest
-        $('div.contests').on('click', '.contest.new a.new', function() {
+        $('#contests').on('click', '.contest.new a.new', function() {
             $.ajax({
                 url: '/contest/new',
                 method: 'POST',
@@ -285,7 +285,7 @@
         });
 
         // Delete contest
-        $('div.contests').on('click', '.contest > .controls > a.delete', function() {
+        $('#contests').on('click', '.contest > .controls > a.delete', function() {
             if (confirm('Really delete this contest?')) {
                 var contestId = $(this).closest('[data-contest-id]').data('contest-id');
                 $.ajax({
@@ -300,7 +300,7 @@
         });
 
         // New match
-        $('div.contests').on('click', '.bracket a.new-match', function() {
+        $('#contests').on('click', '.bracket a.new-match', function() {
             var $bracket = $(this).closest('.bracket');
             if ($bracket.is('.prototype')) {
                 $bracket = $bracket.clone().removeClass('prototype').insertBefore($bracket);
@@ -315,7 +315,7 @@
         });
 
         // Delete match
-        $('div.contests').on('click', '.match > .controls > a.delete', function() {
+        $('#contests').on('click', '.match > .controls > a.delete', function() {
             var $contest = $(this).closest('.contest');
             var $bracket = $(this).closest('.bracket');
             $(this).closest('.match').remove();
@@ -328,7 +328,7 @@
         });
 
         // Toggle winner
-        $('div.contests').on('dblclick', '.contestant .name', function() {
+        $('#contests').on('dblclick', '.contestant .name', function() {
             $(this).parent().siblings().children().removeClass('winner');
             $(this).toggleClass('winner');
             sync.call(this);
@@ -337,7 +337,7 @@
         });
 
         // New bid
-        $('div.contests').on('click', 'a.new-bid', function() {
+        $('#contests').on('click', 'a.new-bid', function() {
             var $contest = $(this).closest('.contest');
             var $bidType = $(this).closest('.bid-type');
             $('#new-bid-form').dialog({
@@ -371,18 +371,38 @@
                         $(this).find('input').val('');
                     },
                 },
+                position: {
+                    my: 'left+20 top',
+                    at: 'right top',
+                    of: this,
+                },
             });
         });
 
-        // Suggest contestants TODO
+        // Delete bid
+        $('#contests').on('click', '.bid a.delete', function() {
+            $contest = $(this).closest('.contest');
+            $(this).closest('.bid').remove();
+            sync.call($contest);
+        });
 
-        $('div.contests').sortable({
+        // Suggest contestants
+        $('#new-bid-form input.on').autocomplete({
+            source: '/suggest-contestant',
+            position: {
+                my: 'left top',
+                at: 'right top',
+                of: '#new-bid-form',
+            },
+        });
+
+        $('#contests').sortable({
             items: '.contest:not(.new)',
             axis: 'y',
             handle: '.move',
             update: function(event, ui) {
                 var data = [];
-                $('div.contests .contest[data-contest-id]').each(function(i, e) {
+                $('#contests .contest[data-contest-id]').each(function(i, e) {
                     data.push({
                         id: $(e).data('contest-id'),
                         priority: i,
@@ -398,7 +418,7 @@
         });
 
         setupDragging();
-        $('.contest').each(function() {
+        $('.contest:not(.new)').each(function() {
             //evaluateOutcome.call(this);
             refreshBids.call(this);
         });

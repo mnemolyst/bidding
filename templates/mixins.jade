@@ -69,7 +69,6 @@ mixin bidType(typeBids, type)
     td.bid-type(class=type, data-type=type)
         each bid in typeBids
             +bid(bid)
-            hr
         a.new-bid(href="javascript:void(null)") new
 
 mixin bid(bid)
@@ -81,3 +80,6 @@ mixin bid(bid)
         span.on(data-val=bid.on)= bid.on
         .payout
             | Payout:&nbsp;$#{bid.payout}
+        .controls
+            a.delete(href="javascript:void(null)") x
+        hr
