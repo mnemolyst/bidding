@@ -5,6 +5,8 @@ var ObjectId =      require('mongodb').ObjectID;
 var bodyparser =    require('body-parser');
 var cookies =       require('cookie-parser');
 var p =             require('promise-extended');
+//var passport =      require('passport');
+//var LocalStrategy = require('passport-local').Strategy;
 var Promise = p.Promise;
 
 var app = express();
@@ -16,6 +18,21 @@ app.use(cookies());
 app.use(bodyparser.json());
 //app.use(require('stylus').middleware(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'public')));
+
+//passport.use(new LocalStrategy(
+//    function(username, password, done) {
+//        User.findOne({ username: username }, function (err, user) {
+//            if (err) { return done(err); }
+//            if (!user) {
+//                return done(null, false, { message: 'Incorrect username.' });
+//            }
+//            if (!user.validPassword(password)) {
+//                return done(null, false, { message: 'Incorrect password.' });
+//            }
+//            return done(null, user);
+//        });
+//    }
+//));
 
 var mongoUrl = process.env.MONGO_URL || 'mongodb://localhost:27017/thumbdurrdome';
 
@@ -252,7 +269,7 @@ function computePayout(contest) {
 //}
 
 // Homepage
-app.get('/', function(req, res, next) {
+app.get('/thumb-home', function(req, res, next) {
     mongo.connect(mongoUrl, function(err, db) {
         var queries = [
             queryAll(db, 'contests'),
@@ -423,16 +440,19 @@ app.post('/contest/:id/bid', function(req, res, next) {
                 case 'show':
                     if (req.body.on.split(',').length !== 1) {
                         res.status(400).send(req.body.type + ' bids must include only one name');
+                        return;
                     }
                     break;
                 case 'exacta':
                     if (req.body.on.split(',').length !== 2) {
                         res.status(400).send(req.body.type + ' bids must list two comma-separated names');
+                        return;
                     }
                     break;
                 case 'trifecta':
                     if (req.body.on.split(',').length !== 3) {
                         res.status(400).send(req.body.type + ' bids must list three comma-separated names');
+                        return;
                     }
                     break;
             }

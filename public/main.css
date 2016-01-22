@@ -47,7 +47,7 @@ table.brackets {
     cursor:pointer;
 }
 .contestant .name.winner {
-    border:2px dotted red;
+    border:2px dashed magenta;
 }
 table.bids td {
     border-right:1px solid;
@@ -79,6 +79,7 @@ table.bids .bid.won .payout {
 }
 a {
     color:orangered;
+    font-size:0.9em;
     font-weight:bold;
     text-decoration:none;
 }

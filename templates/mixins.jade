@@ -1,7 +1,7 @@
 mixin contest(contest)
     if contest === null
         .contest.new
-            a.new(href="javascript:void(null)") new
+            a.new(href="javascript:void(null)") new contest
     else
         .contest(data-contest-id=contest._id.toString(), data-priority=contest.priority)
             .controls
@@ -33,13 +33,13 @@ mixin contest(contest)
 mixin bracket(bracket)
     td.bracket(class=(bracket ? '' : 'prototype'))
         table
-            tr
-                th
-                    a.new-match(href="javascript:void(null)") new match
             if bracket
                 each match in bracket
                     +match(match)
             +match()
+            tr
+                td
+                    a.new-match(href="javascript:void(null)") new match
 
 mixin match(match)
     tr.match(class=(match ? '' : 'prototype'))
@@ -69,7 +69,7 @@ mixin bidType(typeBids, type)
     td.bid-type(class=type, data-type=type)
         each bid in typeBids
             +bid(bid)
-        a.new-bid(href="javascript:void(null)") new
+        a.new-bid(href="javascript:void(null)") new bid
 
 mixin bid(bid)
     .bid(class=(bid.won ? 'won' : ''))

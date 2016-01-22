@@ -86,7 +86,17 @@
 
         $.ajax({
             url: '/contest/' + $contest.data('contest-id'),
+            beforeSend: function() {
+                var $img = $('<img src="/loading.gif" class="loading-gif" />');
+                $img.css({
+                    position: 'absolute',
+                    right: '-35px',
+                    top: '0px',
+                });
+                $img.appendTo($contest.find('.brackets'));
+            },
             success: function(data) {
+                $(this).find('.loading-gif').remove();
                 var $newContest = $(data)
                 $contest.replaceWith($newContest);
                 evaluateOutcome.call($newContest);
@@ -308,10 +318,9 @@
             var $prototype = $bracket.find('.match.prototype');
             var $clone = $prototype.clone().removeClass('prototype');
             $clone.insertBefore($prototype);
-            sync.call(this);
             setupDragging();
             //evaluateOutcome.call(this);
-            refreshBids.call(this);
+            $.when(sync.call(this)).then(refreshBids);
         });
 
         // Delete match
@@ -322,18 +331,16 @@
             if ($bracket.is(':not(:has(.match:not(.prototype)))')) {
                 $bracket.remove();
             }
-            sync.call($contest);
             //evaluateOutcome.call($contest);
-            refreshBids.call($contest);
+            $.when(sync.call($contest)).then(function(){refreshBids.call($contest)});
         });
 
         // Toggle winner
         $('#contests').on('dblclick', '.contestant .name', function() {
             $(this).parent().siblings().children().removeClass('winner');
             $(this).toggleClass('winner');
-            sync.call(this);
             //evaluateOutcome.call(this);
-            refreshBids.call(this);
+            $.when(sync.call(this)).then(refreshBids);
         });
 
         // New bid
