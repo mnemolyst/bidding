@@ -1,18 +1,31 @@
-extends ./layout.jade
-
-include mixins.jade
-
-block content
-    table
-        tr
-            each subboard, type in board
-                th= type
-        tr
-            each subboard in board
-                td
+html
+    head
+        title Thumb Durr Dome
+        block stylesheets
+            link(rel='stylesheet', href='/tote.css')
+    body
+        table
+            tr
+                th Payout per $1 on to-win bids
+                each type in ['Place bids', 'Show bids', 'Exacta', 'Trifecta']
+                    th= type
+            tr
+                td.bidType
                     table
-                        each payout, outcome in subboard
+                        each payout, outcome in board['win']
                             tr
                                 td= outcome
-                                td= payout
+                                td $#{payout}
+                each type in ['place', 'show', 'exacta', 'trifecta']
+                    td.bidType
+                        table
+                            - var total = 0;
+                            each value, outcome in board[type]
+                                - total += Number(value)
+                                tr
+                                    td= outcome
+                                    td $#{value}
+                            tr.total
+                                td Total
+                                td $#{total}
 

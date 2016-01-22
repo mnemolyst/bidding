@@ -137,21 +137,15 @@ function toteBoard(contest) {
 
         var afterVig = typeTotal * (1 - Number(contest['vig']));
 
-        switch (type) {
-            case 'win': //fallthrough
-            case 'place':
-            case 'show':
-                var opts = contest['contestants'];
-                break;
-            case 'exacta':
-                var opts = nChooseM(contest['contestants'], 2).map(function(a) { return a.join(', ') });
-                break;
-            case 'trifecta':
-                var opts = nChooseM(contest['contestants'], 3).map(function(a) { return a.join(', ') });
-                break;
-        }
-        for (var o in opts) {
-            board[type][opts[o]] = afterVig / outcomeTotals[opts[o]];
+        if (type == 'win') {
+            for (var i in outcomeTotals) {
+                board['win'][i] = Math.round(afterVig / outcomeTotals[i] * 100) / 100;
+            }
+        } else {
+            for (var i in outcomeTotals) {
+                board[type][i] = outcomeTotals[i];
+            }
+            //board[type]['Total'] = typeTotal;
         }
     }
 
