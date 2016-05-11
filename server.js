@@ -314,7 +314,7 @@ app.post('/contest/new', function(req, res, next) {
             if (err) throw err;
             db.collection('contests').insertOne(
                 {
-                    priority: 0,
+                    priority: count,
                     vig: 0.15,
                     contestants: [ ],
                     brackets: [ ],
@@ -343,7 +343,7 @@ app.get('/contest/:id', function(req, res, next) {
 
             var contest = computePayout(doc);
 
-            res.render('contest', {contest: doc});
+            res.render('contest', {contest: contest});
 
             db.close();
         });
